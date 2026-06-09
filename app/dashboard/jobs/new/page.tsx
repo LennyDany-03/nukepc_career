@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { ArrowLeft, Plus, X, Calendar, Check, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, X, Calendar, Check, AlertCircle, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -49,21 +49,125 @@ const EMPLOYMENT_TYPES = [
 
 const TEMPLATES = {
   internship: [
-    '✓ Personal Information',
-    '✓ Education Details',
-    '✓ Resume Upload',
-    '✓ Skills',
-    '✓ Portfolio Links',
+    'Personal Information',
+    'Education Details',
+    'Resume Upload',
+    'Skills',
+    'Portfolio Links',
   ],
   fulltime: [
-    '✓ Personal Information',
-    '✓ Professional Experience',
-    '✓ Current CTC',
-    '✓ Expected CTC',
-    '✓ Resume Upload',
-    '✓ Notice Period',
+    'Personal Information',
+    'Professional Experience',
+    'Current CTC',
+    'Expected CTC',
+    'Resume Upload',
+    'Notice Period',
   ],
   custom: ['Custom Application Form'],
+};
+
+// Custom Dropdown Component
+const CustomSelect = ({ 
+  name, 
+  value, 
+  onChange, 
+  options, 
+  placeholder = 'Select an option',
+  label 
+}: {
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+  label?: string;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find(opt => opt.value === value);
+  const displayLabel = selectedOption?.label || placeholder;
+
+  const handleSelect = (optValue: string) => {
+    const event = {
+      target: { name, value: optValue },
+    } as React.ChangeEvent<HTMLSelectElement>;
+    onChange(event);
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      {label && (
+        <label className="block text-sm font-medium text-white mb-2">
+          {label}
+        </label>
+      )}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all flex items-center justify-between hover:bg-white/[0.08]"
+      >
+        <span className={value ? 'text-white' : 'text-white/40'}>{displayLabel}</span>
+        <ChevronDown 
+          size={18} 
+          className={`text-white/60 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-[#FF5A2C]/30 rounded-lg overflow-hidden z-50 max-h-48 overflow-y-auto shadow-lg"
+          >
+            {options.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => handleSelect(option.value)}
+                type="button"
+                className={`w-full text-left px-4 py-3 transition-colors text-sm font-medium ${
+                  value === option.value
+                    ? 'bg-[#FF5A2C] text-white'
+                    : 'text-white/80 hover:bg-white/[0.08] hover:text-white'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Custom Checkbox Component
+const CustomCheckbox = ({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}) => {
+  return (
+    <label className="flex items-center gap-3 cursor-pointer group">
+      <div
+        className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${
+          checked
+            ? 'bg-[#FF5A2C] border-[#FF5A2C]'
+            : 'border-white/[0.3] group-hover:border-[#FF5A2C]/60'
+        }`}
+      >
+        {checked && <Check size={16} className="text-white" />}
+      </div>
+      <span className="text-white/90 font-medium">{label}</span>
+    </label>
+  );
 };
 
 export default function NewJobPage() {
@@ -86,6 +190,13 @@ export default function NewJobPage() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [customizeCheckboxes, setCustomizeCheckboxes] = useState({
+    resume: true,
+    coverLetter: true,
+    portfolio: false,
+    phone: false,
+  });
+
   const skillInputRef = useRef<HTMLInputElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
 
@@ -162,13 +273,6 @@ export default function NewJobPage() {
       skill.toLowerCase().includes(skillInput.toLowerCase()) &&
       !formData.skills.includes(skill)
   );
-
-  // Format date for input
-  const formatDateForInput = (dateStr: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toISOString().split('T')[0];
-  };
 
   // Handle calendar date selection
   const handleDateSelect = (dateStr: string) => {
@@ -264,24 +368,23 @@ export default function NewJobPage() {
             {/* Department & Location */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Department *
-                </label>
-                <select
+                <CustomSelect
                   name="department"
                   value={formData.department}
                   onChange={handleInputChange}
-                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all appearance-none"
-                >
-                  <option value="">Select Department</option>
-                  <option value="Engineering">Engineering</option>
-                  <option value="Design">Design</option>
-                  <option value="Product">Product</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Sales">Sales</option>
-                  <option value="Data">Data</option>
-                  <option value="HR">HR</option>
-                </select>
+                  label="Department *"
+                  placeholder="Select Department"
+                  options={[
+                    { value: '', label: 'Select Department' },
+                    { value: 'Engineering', label: 'Engineering' },
+                    { value: 'Design', label: 'Design' },
+                    { value: 'Product', label: 'Product' },
+                    { value: 'Marketing', label: 'Marketing' },
+                    { value: 'Sales', label: 'Sales' },
+                    { value: 'Data', label: 'Data' },
+                    { value: 'HR', label: 'HR' },
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
@@ -413,8 +516,8 @@ export default function NewJobPage() {
               </div>
             )}
 
-            {/* Skill Input - FIXED: Dropdown now only shows on focus with typing */}
-            <div className="relative">
+            {/* Skill Input with Dropdown */}
+            <div className="relative z-20">
               <input
                 ref={skillInputRef}
                 type="text"
@@ -426,20 +529,20 @@ export default function NewJobPage() {
                 className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
               />
 
-              {/* Suggestions Dropdown - Only shows when user is typing */}
+              {/* Suggestions Dropdown */}
               <AnimatePresence>
                 {showSkillSuggestions && filteredSuggestions.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-white/[0.08] rounded-lg overflow-hidden z-10 max-h-48 overflow-y-auto"
+                    className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-[#FF5A2C]/30 rounded-lg overflow-hidden z-50 max-h-48 overflow-y-auto shadow-lg"
                   >
                     {filteredSuggestions.map((skill) => (
                       <button
                         key={skill}
                         onClick={() => handleAddSkill(skill)}
-                        className="w-full text-left px-4 py-2 hover:bg-white/[0.08] text-white/80 hover:text-white transition-colors text-sm"
+                        className="w-full text-left px-4 py-3 hover:bg-[#FF5A2C]/20 text-white/80 hover:text-white transition-colors text-sm font-medium hover:bg-white/[0.08]"
                         type="button"
                       >
                         {skill}
@@ -463,10 +566,10 @@ export default function NewJobPage() {
             </h2>
 
             {/* Salary Fields */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Minimum Salary (INR) *
+                  Minimum Salary (₹ INR) *
                 </label>
                 <input
                   type="number"
@@ -479,7 +582,7 @@ export default function NewJobPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Maximum Salary (INR) *
+                  Maximum Salary (₹ INR) *
                 </label>
                 <input
                   type="number"
@@ -490,22 +593,6 @@ export default function NewJobPage() {
                   className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
                 />
               </div>
-            </div>
-
-            {/* Frequency */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                Frequency
-              </label>
-              <select
-                name="salaryFrequency"
-                value={formData.salaryFrequency}
-                onChange={handleInputChange}
-                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all appearance-none"
-              >
-                <option value="annual">Annual</option>
-                <option value="monthly">Monthly</option>
-              </select>
             </div>
           </motion.div>
 
@@ -520,53 +607,34 @@ export default function NewJobPage() {
               Application Settings
             </h2>
 
-            {/* Application Deadline - FIXED: Now has proper calendar picker */}
+            {/* Application Deadline */}
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 Application Deadline *
               </label>
-              <div className="relative">
+              <div className="relative z-10">
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={
                       formData.applicationDeadline
-                        ? new Date(formData.applicationDeadline).toLocaleDateString(
-                            'en-IN',
-                            {
-                              year: 'numeric',
-                              month: '2-digit',
-                              day: '2-digit',
-                            }
-                          )
+                        ? new Date(formData.applicationDeadline).toLocaleDateString('en-GB')
                         : ''
                     }
-                    onChange={(e) => {
-                      const dateStr = e.target.value;
-                      if (dateStr) {
-                        const parts = dateStr.split('-');
-                        if (parts.length === 3) {
-                          const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                          setFormData((prev) => ({
-                            ...prev,
-                            applicationDeadline: date.toISOString(),
-                          }));
-                        }
-                      }
-                    }}
                     placeholder="DD/MM/YYYY"
-                    className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
+                    readOnly
+                    className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all cursor-pointer"
                   />
                   <button
-                    onClick={() => setShowCalendar(!showCalendar)}
-                    className="p-3 bg-white/[0.05] border border-white/[0.08] rounded-lg hover:bg-white/[0.08] transition-colors"
                     type="button"
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className="p-3 hover:bg-white/[0.08] rounded-lg transition-colors text-white/60 hover:text-white"
                   >
-                    <Calendar size={20} className="text-white/70" />
+                    <Calendar size={20} />
                   </button>
                 </div>
 
-                {/* Calendar Popup - FIXED: Now properly displays calendar */}
+                {/* Calendar Dropdown */}
                 <AnimatePresence>
                   {showCalendar && (
                     <motion.div
@@ -574,57 +642,43 @@ export default function NewJobPage() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full right-0 mt-2 bg-[#1a1a1a] border border-white/[0.08] rounded-lg p-4 z-20 w-72"
+                      className="absolute top-full left-0 mt-2 bg-[#1a1a1a] border border-[#FF5A2C]/30 rounded-lg p-4 z-50 w-80 shadow-lg"
                     >
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-white font-medium text-sm">
-                          {monthName}
-                        </h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-white font-semibold">{monthName}</h3>
                         <button
-                          onClick={() => setShowCalendar(false)}
-                          className="text-white/50 hover:text-white transition-colors"
                           type="button"
+                          onClick={() => setShowCalendar(false)}
+                          className="text-white/60 hover:text-white transition-colors"
                         >
                           <X size={18} />
                         </button>
                       </div>
 
                       {/* Calendar Grid */}
-                      <div className="grid grid-cols-7 gap-1">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
-                          (day) => (
-                            <div
-                              key={day}
-                              className="text-center text-white/50 text-xs font-medium py-2"
-                            >
-                              {day}
-                            </div>
-                          )
-                        )}
-                        {calendarDays.map((date, idx) => (
+                      <div className="grid grid-cols-7 gap-2">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                          <div key={day} className="text-center text-xs font-semibold text-white/50 py-2">
+                            {day}
+                          </div>
+                        ))}
+                        {calendarDays.map((day, index) => (
                           <button
-                            key={idx}
-                            onClick={() => {
-                              if (date) {
-                                handleDateSelect(date.toISOString());
-                              }
-                            }}
-                            disabled={!date}
-                            className={`p-2 text-sm rounded transition-colors ${
-                              !date
-                                ? 'text-white/20'
-                                : date.toDateString() ===
-                                  new Date(
-                                    formData.applicationDeadline || ''
-                                  ).toDateString()
-                                ? 'bg-[#FF5A2C] text-white font-medium'
-                                : date < today
-                                ? 'text-white/30 cursor-not-allowed'
-                                : 'text-white hover:bg-white/[0.08]'
-                            }`}
+                            key={index}
                             type="button"
+                            onClick={() =>
+                              day && handleDateSelect(day.toISOString().split('T')[0])
+                            }
+                            disabled={!day}
+                            className={`py-2 rounded text-sm font-medium transition-colors ${
+                              !day
+                                ? 'text-white/10'
+                                : day.toDateString() === today.toDateString()
+                                ? 'bg-[#FF5A2C] text-white'
+                                : 'text-white/80 hover:bg-white/[0.08] hover:text-white'
+                            }`}
                           >
-                            {date?.getDate()}
+                            {day?.getDate()}
                           </button>
                         ))}
                       </div>
@@ -648,81 +702,77 @@ export default function NewJobPage() {
 
             {/* Application Template */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-medium text-white mb-3">
                 Application Template *
               </label>
-              <select
+              <CustomSelect
                 name="applicationTemplate"
                 value={formData.applicationTemplate}
                 onChange={handleInputChange}
-                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all appearance-none mb-4"
-              >
-                <option value="internship">Internship Template</option>
-                <option value="fulltime">Full-Time Template</option>
-                <option value="custom">Custom Form</option>
-              </select>
-
-              {/* Template Preview */}
-              <div className="bg-white/[0.03] border border-white/[0.08] rounded-lg p-4 mb-4">
-                <p className="text-sm text-white/60 mb-3">
-                  Fields that will be collected:
-                </p>
-                <div className="space-y-2">
-                  {TEMPLATES[formData.applicationTemplate].map((field, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 text-sm text-white/80"
-                    >
-                      <Check size={16} className="text-[#FF5A2C]" />
-                      {field}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowCustomizeModal(true)}
-                className="w-full px-4 py-2 bg-white/[0.08] border border-white/[0.08] rounded-lg text-white/80 hover:bg-white/[0.12] transition-all text-sm font-medium"
-                type="button"
-              >
-                Customize Application Form
-              </button>
+                options={[
+                  { value: 'internship', label: 'Internship Template' },
+                  { value: 'fulltime', label: 'Full-Time Template' },
+                  { value: 'custom', label: 'Custom Template' },
+                ]}
+              />
             </div>
+
+            {/* Template Preview */}
+            <div className="mt-6 p-4 bg-white/[0.03] border border-white/[0.08] rounded-lg">
+              <p className="text-xs text-white/60 mb-3 font-semibold">
+                Fields to be collected:
+              </p>
+              <div className="space-y-2">
+                {TEMPLATES[formData.applicationTemplate].map((field) => (
+                  <div key={field} className="flex items-center gap-2">
+                    <Check size={16} className="text-[#FF5A2C]" />
+                    <span className="text-sm text-white/80">{field}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Customize Button */}
+            <button
+              type="button"
+              onClick={() => setShowCustomizeModal(true)}
+              className="mt-6 w-full bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white font-medium py-3 rounded-lg transition-colors"
+            >
+              Customize Application Form
+            </button>
           </motion.div>
         </div>
 
         {/* Right Sidebar */}
-        <div className="hidden lg:flex lg:flex-col px-8 py-8 border-l border-white/[0.08] sticky top-24 h-fit gap-6">
+        <div className="lg:sticky lg:top-20 lg:h-fit px-8 py-8 space-y-6 max-h-fit">
           {/* Job Summary Card */}
           <motion.div
             className="bg-[#141414] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <h3 className="text-sm font-semibold text-white mb-4">
-              Job Summary
-            </h3>
-            <div className="space-y-3 text-sm">
+            <h3 className="text-sm font-semibold text-white mb-4">Job Summary</h3>
+
+            <div className="space-y-4 text-sm">
               <div>
-                <p className="text-white/60">Position</p>
-                <p className="text-white font-medium">
-                  {formData.jobTitle || 'Not specified'}
+                <p className="text-white/60 text-xs">Title</p>
+                <p className="text-white font-medium truncate">
+                  {formData.jobTitle || 'Not set'}
                 </p>
               </div>
               <div>
-                <p className="text-white/60">Employment Type</p>
+                <p className="text-white/60 text-xs">Department</p>
                 <p className="text-white font-medium">
-                  {EMPLOYMENT_TYPES.find((t) => t.value === formData.employmentType)
-                    ?.label || 'Not selected'}
+                  {formData.department || 'Not set'}
                 </p>
               </div>
               <div>
-                <p className="text-white/60">Salary Range</p>
+                <p className="text-white/60 text-xs">Salary Range</p>
                 <p className="text-white font-medium">
                   {formData.minSalary && formData.maxSalary
                     ? `₹${parseInt(formData.minSalary).toLocaleString('en-IN')} - ₹${parseInt(formData.maxSalary).toLocaleString('en-IN')}`
-                    : 'Not specified'}
+                    : 'Not set'}
                 </p>
               </div>
             </div>
@@ -731,107 +781,138 @@ export default function NewJobPage() {
           {/* Publishing Checklist */}
           <motion.div
             className="bg-[#141414] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
           >
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-white">
-                  Publishing Checklist
-                </h3>
-                <span className="text-xs font-medium text-[#FF5A2C]">
-                  {completionPercentage}%
-                </span>
-              </div>
-              <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-[#FF5A2C]"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${completionPercentage}%` }}
-                  transition={{ duration: 0.5 }}
+            <h3 className="text-sm font-semibold text-white mb-4">
+              Publishing Checklist
+            </h3>
+
+            {/* Progress Ring */}
+            <div className="flex items-center justify-center mb-6">
+              <svg width="120" height="120" className="transform -rotate-90">
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="54"
+                  stroke="rgba(255, 255, 255, 0.1)"
+                  strokeWidth="8"
+                  fill="none"
                 />
-              </div>
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="54"
+                  stroke="#FF5A2C"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeDasharray={`${(2 * Math.PI * 54 * completionPercentage) / 100} ${2 * Math.PI * 54}`}
+                  strokeLinecap="round"
+                  style={{ transition: 'stroke-dasharray 0.3s ease' }}
+                />
+                <text
+                  x="60"
+                  y="68"
+                  textAnchor="middle"
+                  className="text-2xl font-bold fill-white"
+                >
+                  {completionPercentage}%
+                </text>
+              </svg>
             </div>
 
-            <div className="space-y-2 text-sm">
-              {[
-                { label: 'Job Title', done: !!formData.jobTitle },
-                {
-                  label: 'Job Description',
-                  done: !!formData.jobDescription,
-                },
-                { label: 'Required Skills', done: formData.skills.length > 0 },
-                {
-                  label: 'Application Deadline',
-                  done: !!formData.applicationDeadline,
-                },
-                {
-                  label: 'Compensation',
-                  done: !!formData.minSalary && !!formData.maxSalary,
-                },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-2 text-white/70"
-                >
-                  <div
-                    className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                      item.done
-                        ? 'bg-[#FF5A2C] border-[#FF5A2C]'
-                        : 'border-white/[0.2]'
-                    }`}
-                  >
-                    {item.done && <Check size={14} className="text-white" />}
-                  </div>
-                  <span className={item.done ? 'text-white' : ''}>
-                    {item.label}
-                  </span>
+            {/* Checklist Items */}
+            <div className="space-y-3">
+              <div className={`flex items-center gap-2 ${formData.jobTitle ? 'text-white' : 'text-white/50'}`}>
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                  formData.jobTitle ? 'bg-[#FF5A2C] border-[#FF5A2C]' : 'border-white/[0.3]'
+                }`}>
+                  {formData.jobTitle && <Check size={12} className="text-white" />}
                 </div>
-              ))}
+                <span className="text-sm">Job title added</span>
+              </div>
+
+              <div className={`flex items-center gap-2 ${formData.jobDescription ? 'text-white' : 'text-white/50'}`}>
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                  formData.jobDescription ? 'bg-[#FF5A2C] border-[#FF5A2C]' : 'border-white/[0.3]'
+                }`}>
+                  {formData.jobDescription && <Check size={12} className="text-white" />}
+                </div>
+                <span className="text-sm">Description written</span>
+              </div>
+
+              <div className={`flex items-center gap-2 ${formData.skills.length > 0 ? 'text-white' : 'text-white/50'}`}>
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                  formData.skills.length > 0 ? 'bg-[#FF5A2C] border-[#FF5A2C]' : 'border-white/[0.3]'
+                }`}>
+                  {formData.skills.length > 0 && <Check size={12} className="text-white" />}
+                </div>
+                <span className="text-sm">Skills added</span>
+              </div>
+
+              <div className={`flex items-center gap-2 ${formData.applicationDeadline ? 'text-white' : 'text-white/50'}`}>
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                  formData.applicationDeadline ? 'bg-[#FF5A2C] border-[#FF5A2C]' : 'border-white/[0.3]'
+                }`}>
+                  {formData.applicationDeadline && <Check size={12} className="text-white" />}
+                </div>
+                <span className="text-sm">Deadline set</span>
+              </div>
+
+              <div className={`flex items-center gap-2 ${formData.minSalary && formData.maxSalary ? 'text-white' : 'text-white/50'}`}>
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                  formData.minSalary && formData.maxSalary ? 'bg-[#FF5A2C] border-[#FF5A2C]' : 'border-white/[0.3]'
+                }`}>
+                  {formData.minSalary && formData.maxSalary && <Check size={12} className="text-white" />}
+                </div>
+                <span className="text-sm">Salary set</span>
+              </div>
             </div>
           </motion.div>
         </div>
       </div>
 
       {/* Sticky Bottom Action Bar */}
-      <div className="sticky bottom-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-white/[0.08] px-8 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <div className="sticky bottom-0 z-30 bg-[#0A0A0A]/90 backdrop-blur-xl border-t border-white/[0.08] px-8 py-4">
+        <div className="flex items-center justify-between max-w-7xl">
           <div className="flex items-center gap-2">
             {lastSaved && (
               <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="flex items-center gap-2 text-xs text-white/60"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-2 text-xs text-[#FF5A2C]"
               >
-                <Check size={14} className="text-[#FF5A2C]" />
-                Auto-saved
+                <Check size={14} />
+                Saved
               </motion.div>
             )}
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={handleAutoSave}
-              className="px-6 py-2 bg-white/[0.08] border border-white/[0.08] rounded-lg text-white hover:bg-white/[0.12] transition-all font-medium text-sm"
+              className="px-6 py-2 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white font-medium rounded-lg transition-colors"
             >
               Save Draft
             </button>
             <button
-              className="px-6 py-2 bg-white/[0.08] border border-white/[0.08] rounded-lg text-white hover:bg-white/[0.12] transition-all font-medium text-sm"
+              type="button"
+              className="px-6 py-2 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white font-medium rounded-lg transition-colors"
             >
               Preview
             </button>
             <button
+              type="button"
               disabled={completionPercentage < 100}
-              className={`px-6 py-2 rounded-lg font-medium text-sm transition-all ${
+              className={`px-6 py-2 font-medium rounded-lg transition-all ${
                 completionPercentage === 100
                   ? 'bg-[#FF5A2C] text-white hover:bg-[#FF7A4A]'
-                  : 'bg-[#FF5A2C]/30 text-white/50 cursor-not-allowed'
+                  : 'bg-white/[0.05] text-white/50 cursor-not-allowed'
               }`}
             >
-              Publish
+              Publish Job
             </button>
           </div>
         </div>
@@ -844,51 +925,78 @@ export default function NewJobPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
             onClick={() => setShowCustomizeModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
               className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8 max-w-md w-full mx-4"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-xl font-bold text-white">
                   Customize Application Form
                 </h2>
                 <button
-                  onClick={() => setShowCustomizeModal(false)}
-                  className="text-white/50 hover:text-white transition-colors"
                   type="button"
+                  onClick={() => setShowCustomizeModal(false)}
+                  className="p-2 hover:bg-white/[0.08] rounded-lg transition-colors text-white/60 hover:text-white"
                 >
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" defaultChecked className="w-4 h-4" />
-                  <span className="text-white text-sm">Resume Upload</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" defaultChecked className="w-4 h-4" />
-                  <span className="text-white text-sm">Cover Letter</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4" />
-                  <span className="text-white text-sm">Portfolio Link</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4" />
-                  <span className="text-white text-sm">Phone Number</span>
-                </label>
+              {/* Custom Checkboxes */}
+              <div className="space-y-4 mb-6">
+                <CustomCheckbox
+                  checked={customizeCheckboxes.resume}
+                  onChange={(checked) =>
+                    setCustomizeCheckboxes((prev) => ({
+                      ...prev,
+                      resume: checked,
+                    }))
+                  }
+                  label="Resume Upload"
+                />
+                <CustomCheckbox
+                  checked={customizeCheckboxes.coverLetter}
+                  onChange={(checked) =>
+                    setCustomizeCheckboxes((prev) => ({
+                      ...prev,
+                      coverLetter: checked,
+                    }))
+                  }
+                  label="Cover Letter"
+                />
+                <CustomCheckbox
+                  checked={customizeCheckboxes.portfolio}
+                  onChange={(checked) =>
+                    setCustomizeCheckboxes((prev) => ({
+                      ...prev,
+                      portfolio: checked,
+                    }))
+                  }
+                  label="Portfolio Link"
+                />
+                <CustomCheckbox
+                  checked={customizeCheckboxes.phone}
+                  onChange={(checked) =>
+                    setCustomizeCheckboxes((prev) => ({
+                      ...prev,
+                      phone: checked,
+                    }))
+                  }
+                  label="Phone Number"
+                />
               </div>
 
+              {/* Save Changes Button */}
               <button
+                type="button"
                 onClick={() => setShowCustomizeModal(false)}
-                className="w-full px-4 py-2 bg-[#FF5A2C] text-white rounded-lg hover:bg-[#FF7A4A] transition-all font-medium"
+                className="w-full bg-[#FF5A2C] hover:bg-[#FF7A4A] text-white font-bold py-3 rounded-lg transition-colors"
               >
                 Save Changes
               </button>
