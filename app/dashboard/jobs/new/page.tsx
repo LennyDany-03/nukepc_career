@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type EmploymentType = 'internship' | 'fulltime' | 'contract' | 'parttime' | null;
-type ApplicationVisibility = 'public' | 'internal' | 'referral';
 type ApplicationTemplate = 'internship' | 'fulltime' | 'custom';
 
 interface JobFormData {
@@ -19,9 +18,7 @@ interface JobFormData {
   minSalary: string;
   maxSalary: string;
   salaryFrequency: 'annual' | 'monthly';
-  currency: 'USD' | 'INR' | 'EUR';
   applicationDeadline: string;
-  applicationVisibility: ApplicationVisibility;
   applicationTemplate: ApplicationTemplate;
 }
 
@@ -80,17 +77,17 @@ export default function NewJobPage() {
     minSalary: '',
     maxSalary: '',
     salaryFrequency: 'annual',
-    currency: 'USD',
     applicationDeadline: '',
-    applicationVisibility: 'public',
     applicationTemplate: 'fulltime',
   });
 
   const [skillInput, setSkillInput] = useState('');
   const [showSkillSuggestions, setShowSkillSuggestions] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const skillInputRef = useRef<HTMLInputElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   // Calculate completion percentage
   const completionSteps = [
@@ -98,16 +95,15 @@ export default function NewJobPage() {
     !!formData.jobDescription,
     formData.skills.length > 0,
     !!formData.applicationDeadline,
-    formData.applicationTemplate !== '',
+    !!formData.minSalary && !!formData.maxSalary,
   ];
   const completionPercentage = Math.round(
     (completionSteps.filter(Boolean).length / completionSteps.length) * 100
   );
 
+  // Handle input changes
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -116,29 +112,7 @@ export default function NewJobPage() {
     }));
   };
 
-  const handleAddSkill = (skill: string) => {
-    const trimmedSkill = skill.trim();
-    if (
-      trimmedSkill &&
-      !formData.skills.includes(trimmedSkill) &&
-      formData.skills.length < 20
-    ) {
-      setFormData((prev) => ({
-        ...prev,
-        skills: [...prev.skills, trimmedSkill],
-      }));
-      setSkillInput('');
-      setShowSkillSuggestions(false);
-    }
-  };
-
-  const handleRemoveSkill = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((_, i) => i !== index),
-    }));
-  };
-
+  // Handle employment type
   const handleEmploymentTypeChange = (type: EmploymentType) => {
     setFormData((prev) => ({
       ...prev,
@@ -146,39 +120,121 @@ export default function NewJobPage() {
     }));
   };
 
-  const handleSaveDraft = () => {
-    // Simulate save
-    setLastSaved(new Date());
-    setTimeout(() => setLastSaved(null), 3000);
+  // Handle skill input
+  const handleSkillInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSkillInput(e.target.value);
+    setShowSkillSuggestions(e.target.value.length > 0);
   };
 
+  // Add skill
+  const handleAddSkill = (skill: string) => {
+    if (!skill.trim()) return;
+    if (!formData.skills.includes(skill)) {
+      setFormData((prev) => ({
+        ...prev,
+        skills: [...prev.skills, skill],
+      }));
+    }
+    setSkillInput('');
+    setShowSkillSuggestions(false);
+    skillInputRef.current?.focus();
+  };
+
+  // Handle skill input key press
+  const handleSkillKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddSkill(skillInput);
+    }
+  };
+
+  // Remove skill
+  const handleRemoveSkill = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Get filtered suggestions
   const filteredSuggestions = SKILL_SUGGESTIONS.filter(
     (skill) =>
       skill.toLowerCase().includes(skillInput.toLowerCase()) &&
       !formData.skills.includes(skill)
   );
 
+  // Format date for input
+  const formatDateForInput = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toISOString().split('T')[0];
+  };
+
+  // Handle calendar date selection
+  const handleDateSelect = (dateStr: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      applicationDeadline: dateStr,
+    }));
+    setShowCalendar(false);
+  };
+
+  // Generate calendar days
+  const generateCalendarDays = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(year, month, i));
+    }
+    return days;
+  };
+
+  const calendarDays = generateCalendarDays();
+  const today = new Date();
+  const monthName = today.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  // Auto-save functionality
+  const handleAutoSave = () => {
+    setLastSaved(new Date());
+    setTimeout(() => setLastSaved(null), 3000);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0A0A0A] p-8">
+    <div className="min-h-screen bg-[#0A0A0A] text-white overflow-x-hidden">
       {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/dashboard/jobs"
-          className="flex items-center gap-2 text-[#FF5A2C] hover:text-[#FF8A5B] transition-colors mb-4 font-medium text-sm"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Jobs
-        </Link>
-        <h1 className="text-4xl font-bold text-white mb-2">Create New Job</h1>
-        <p className="text-white/60 text-sm">
-          Create and publish a new job opening for candidates.
-        </p>
+      <div className="sticky top-0 z-40 bg-[#0A0A0A]/80 backdrop-blur-xl border-b border-white/[0.08] px-8 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard/jobs"
+              className="p-2 hover:bg-white/[0.08] rounded-lg transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold">Post a New Job</h1>
+              <p className="text-sm text-white/60 mt-1">
+                Create and manage your job posting
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Main Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
-        {/* Main Editor */}
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-0">
+        {/* Main Content Area */}
+        <div className="px-8 py-8 space-y-6 max-w-4xl">
           {/* Section 1: Job Information */}
           <motion.div
             className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl"
@@ -189,83 +245,82 @@ export default function NewJobPage() {
             <h2 className="text-lg font-semibold text-white mb-6">
               Job Information
             </h2>
-            <div className="space-y-6">
-              {/* Job Title */}
+
+            {/* Job Title */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-white mb-2">
+                Job Title *
+              </label>
+              <input
+                type="text"
+                name="jobTitle"
+                value={formData.jobTitle}
+                onChange={handleInputChange}
+                placeholder="e.g., Senior React Developer"
+                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
+              />
+            </div>
+
+            {/* Department & Location */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Job Title *
+                  Department *
+                </label>
+                <select
+                  name="department"
+                  value={formData.department}
+                  onChange={handleInputChange}
+                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all appearance-none"
+                >
+                  <option value="">Select Department</option>
+                  <option value="Engineering">Engineering</option>
+                  <option value="Design">Design</option>
+                  <option value="Product">Product</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Data">Data</option>
+                  <option value="HR">HR</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Location *
                 </label>
                 <input
                   type="text"
-                  name="jobTitle"
-                  value={formData.jobTitle}
+                  name="location"
+                  value={formData.location}
                   onChange={handleInputChange}
-                  placeholder="e.g., Senior React Developer"
+                  placeholder="e.g., Remote, San Francisco"
                   className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
                 />
               </div>
+            </div>
 
-              {/* Department & Location */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Department *
-                  </label>
-                  <select
-                    name="department"
-                    value={formData.department}
-                    onChange={handleInputChange}
-                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
+            {/* Employment Type - Segmented Controls */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-white mb-3">
+                Employment Type *
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                {EMPLOYMENT_TYPES.map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() =>
+                      handleEmploymentTypeChange(
+                        type.value as EmploymentType
+                      )
+                    }
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all border ${
+                      formData.employmentType === type.value
+                        ? 'bg-[#FF5A2C] text-white border-[#FF5A2C]'
+                        : 'bg-white/[0.05] text-white/70 border-white/[0.08] hover:bg-white/[0.08]'
+                    }`}
                   >
-                    <option value="">Select Department</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Design">Design</option>
-                    <option value="Product">Product</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Sales">Sales</option>
-                    <option value="Data">Data</option>
-                    <option value="HR">HR</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Location *
-                  </label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Remote, San Francisco"
-                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Employment Type - Segmented Controls */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-3">
-                  Employment Type *
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {EMPLOYMENT_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      onClick={() =>
-                        handleEmploymentTypeChange(
-                          type.value as EmploymentType
-                        )
-                      }
-                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all border ${
-                        formData.employmentType === type.value
-                          ? 'bg-[#FF5A2C] text-white border-[#FF5A2C]'
-                          : 'bg-white/[0.05] text-white/70 border-white/[0.08] hover:bg-white/[0.08]'
-                      }`}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
+                    {type.label}
+                  </button>
+                ))}
               </div>
             </div>
           </motion.div>
@@ -333,63 +388,59 @@ export default function NewJobPage() {
             </div>
 
             {/* Skills Display */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              <AnimatePresence>
-                {formData.skills.map((skill, index) => (
-                  <motion.div
-                    key={skill}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    className="bg-[#FF5A2C] text-white px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 hover:bg-[#FF7A4A] transition-colors"
-                  >
-                    {skill}
-                    <button
-                      onClick={() => handleRemoveSkill(index)}
-                      className="hover:opacity-80 transition-opacity"
+            {formData.skills.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                <AnimatePresence>
+                  {formData.skills.map((skill, index) => (
+                    <motion.div
+                      key={skill}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      className="bg-[#FF5A2C] text-white px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 hover:bg-[#FF7A4A] transition-colors"
                     >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+                      {skill}
+                      <button
+                        onClick={() => handleRemoveSkill(index)}
+                        className="hover:opacity-80 transition-opacity"
+                        type="button"
+                      >
+                        <X size={14} />
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
 
-            {/* Skill Input with Suggestions */}
+            {/* Skill Input - FIXED: Dropdown now only shows on focus with typing */}
             <div className="relative">
               <input
                 ref={skillInputRef}
                 type="text"
                 value={skillInput}
-                onChange={(e) => {
-                  setSkillInput(e.target.value);
-                  setShowSkillSuggestions(true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddSkill(skillInput);
-                  }
-                }}
-                onFocus={() => setShowSkillSuggestions(true)}
+                onChange={handleSkillInputChange}
+                onKeyDown={handleSkillKeyDown}
+                onFocus={() => skillInput.length > 0 && setShowSkillSuggestions(true)}
                 placeholder="Type and press Enter to add skill"
                 className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
               />
 
-              {/* Suggestions Dropdown */}
+              {/* Suggestions Dropdown - Only shows when user is typing */}
               <AnimatePresence>
                 {showSkillSuggestions && filteredSuggestions.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-[#1A1A1A] border border-white/[0.08] rounded-lg z-10 overflow-hidden"
+                    className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-white/[0.08] rounded-lg overflow-hidden z-10 max-h-48 overflow-y-auto"
                   >
                     {filteredSuggestions.map((skill) => (
                       <button
                         key={skill}
                         onClick={() => handleAddSkill(skill)}
-                        className="w-full text-left px-4 py-2.5 hover:bg-white/[0.08] text-white text-sm transition-colors"
+                        className="w-full text-left px-4 py-2 hover:bg-white/[0.08] text-white/80 hover:text-white transition-colors text-sm"
+                        type="button"
                       >
                         {skill}
                       </button>
@@ -410,69 +461,51 @@ export default function NewJobPage() {
             <h2 className="text-lg font-semibold text-white mb-6">
               Compensation
             </h2>
-            <div className="space-y-4">
-              {/* Salary Range */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Minimum Salary
-                  </label>
-                  <input
-                    type="number"
-                    name="minSalary"
-                    value={formData.minSalary}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Maximum Salary
-                  </label>
-                  <input
-                    type="number"
-                    name="maxSalary"
-                    value={formData.maxSalary}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
-                  />
-                </div>
-              </div>
 
-              {/* Frequency & Currency */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Frequency
-                  </label>
-                  <select
-                    name="salaryFrequency"
-                    value={formData.salaryFrequency}
-                    onChange={handleInputChange}
-                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
-                  >
-                    <option value="annual">Annual</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Currency
-                  </label>
-                  <select
-                    name="currency"
-                    value={formData.currency}
-                    onChange={handleInputChange}
-                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
-                  >
-                    <option value="USD">$ USD</option>
-                    <option value="INR">₹ INR</option>
-                    <option value="EUR">€ EUR</option>
-                  </select>
-                </div>
+            {/* Salary Fields */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Minimum Salary (INR) *
+                </label>
+                <input
+                  type="number"
+                  name="minSalary"
+                  value={formData.minSalary}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
+                />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Maximum Salary (INR) *
+                </label>
+                <input
+                  type="number"
+                  name="maxSalary"
+                  value={formData.maxSalary}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Frequency */}
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                Frequency
+              </label>
+              <select
+                name="salaryFrequency"
+                value={formData.salaryFrequency}
+                onChange={handleInputChange}
+                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all appearance-none"
+              >
+                <option value="annual">Annual</option>
+                <option value="monthly">Monthly</option>
+              </select>
             </div>
           </motion.div>
 
@@ -486,71 +519,118 @@ export default function NewJobPage() {
             <h2 className="text-lg font-semibold text-white mb-6">
               Application Settings
             </h2>
-            <div className="space-y-6">
-              {/* Application Deadline */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Application Deadline *
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
-                  <input
-                    type="date"
-                    name="applicationDeadline"
-                    value={formData.applicationDeadline}
-                    onChange={handleInputChange}
-                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
-                  />
-                </div>
-              </div>
 
-              {/* Application Visibility */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-3">
-                  Application Visibility
-                </label>
-                <div className="space-y-2">
-                  {[
-                    { value: 'public', label: 'Public', desc: 'Anyone can apply' },
-                    { value: 'internal', label: 'Internal Only', desc: 'Company members only' },
-                    {
-                      value: 'referral',
-                      label: 'Referral Only',
-                      desc: 'Through referrals',
-                    },
-                  ].map((option) => (
-                    <label
-                      key={option.value}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/[0.05] cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="radio"
-                        name="applicationVisibility"
-                        value={option.value}
-                        checked={
-                          formData.applicationVisibility ===
-                          (option.value as ApplicationVisibility)
-                        }
-                        onChange={(e) =>
+            {/* Application Deadline - FIXED: Now has proper calendar picker */}
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                Application Deadline *
+              </label>
+              <div className="relative">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={
+                      formData.applicationDeadline
+                        ? new Date(formData.applicationDeadline).toLocaleDateString(
+                            'en-IN',
+                            {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                            }
+                          )
+                        : ''
+                    }
+                    onChange={(e) => {
+                      const dateStr = e.target.value;
+                      if (dateStr) {
+                        const parts = dateStr.split('-');
+                        if (parts.length === 3) {
+                          const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                           setFormData((prev) => ({
                             ...prev,
-                            applicationVisibility: e.target
-                              .value as ApplicationVisibility,
-                          }))
+                            applicationDeadline: date.toISOString(),
+                          }));
                         }
-                        className="w-4 h-4"
-                      />
-                      <div>
-                        <div className="text-sm font-medium text-white">
-                          {option.label}
-                        </div>
-                        <div className="text-xs text-white/50">
-                          {option.desc}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
+                      }
+                    }}
+                    placeholder="DD/MM/YYYY"
+                    className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
+                  />
+                  <button
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className="p-3 bg-white/[0.05] border border-white/[0.08] rounded-lg hover:bg-white/[0.08] transition-colors"
+                    type="button"
+                  >
+                    <Calendar size={20} className="text-white/70" />
+                  </button>
                 </div>
+
+                {/* Calendar Popup - FIXED: Now properly displays calendar */}
+                <AnimatePresence>
+                  {showCalendar && (
+                    <motion.div
+                      ref={calendarRef}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full right-0 mt-2 bg-[#1a1a1a] border border-white/[0.08] rounded-lg p-4 z-20 w-72"
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-white font-medium text-sm">
+                          {monthName}
+                        </h3>
+                        <button
+                          onClick={() => setShowCalendar(false)}
+                          className="text-white/50 hover:text-white transition-colors"
+                          type="button"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+
+                      {/* Calendar Grid */}
+                      <div className="grid grid-cols-7 gap-1">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
+                          (day) => (
+                            <div
+                              key={day}
+                              className="text-center text-white/50 text-xs font-medium py-2"
+                            >
+                              {day}
+                            </div>
+                          )
+                        )}
+                        {calendarDays.map((date, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              if (date) {
+                                handleDateSelect(date.toISOString());
+                              }
+                            }}
+                            disabled={!date}
+                            className={`p-2 text-sm rounded transition-colors ${
+                              !date
+                                ? 'text-white/20'
+                                : date.toDateString() ===
+                                  new Date(
+                                    formData.applicationDeadline || ''
+                                  ).toDateString()
+                                ? 'bg-[#FF5A2C] text-white font-medium'
+                                : date < today
+                                ? 'text-white/30 cursor-not-allowed'
+                                : 'text-white hover:bg-white/[0.08]'
+                            }`}
+                            type="button"
+                          >
+                            {date?.getDate()}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>
@@ -566,230 +646,145 @@ export default function NewJobPage() {
               Candidate Requirements
             </h2>
 
-            {/* Application Template Selector */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-white mb-3">
+            {/* Application Template */}
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
                 Application Template *
               </label>
               <select
+                name="applicationTemplate"
                 value={formData.applicationTemplate}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    applicationTemplate: e.target
-                      .value as ApplicationTemplate,
-                  }))
-                }
-                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
+                onChange={handleInputChange}
+                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all appearance-none mb-4"
               >
                 <option value="internship">Internship Template</option>
                 <option value="fulltime">Full-Time Template</option>
-                <option value="custom">Custom Template</option>
+                <option value="custom">Custom Form</option>
               </select>
-            </div>
 
-            {/* Template Summary */}
-            <div className="bg-white/[0.02] border border-white/[0.08] rounded-lg p-4 mb-4">
-              <div className="space-y-2">
-                {TEMPLATES[formData.applicationTemplate].map((item, idx) => (
-                  <div key={idx} className="text-sm text-white/70">
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Customize Button */}
-            <button
-              onClick={() => setShowCustomizeModal(true)}
-              className="w-full px-4 py-2 bg-white/[0.08] text-white rounded-lg hover:bg-white/[0.12] transition-colors text-sm font-medium"
-            >
-              Customize Application Form
-            </button>
-          </motion.div>
-
-          {/* Section 7: Hiring Workflow */}
-          <motion.div
-            className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <h2 className="text-lg font-semibold text-white mb-6">
-              Hiring Workflow
-            </h2>
-            <div>
-              <label className="block text-sm font-medium text-white mb-3">
-                Select Workflow
-              </label>
-              <select
-                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/50 transition-all"
-              >
-                <option>Default Workflow</option>
-              </select>
-              <div className="mt-4 flex gap-2 flex-wrap">
-                {['Applied', 'Screening', 'Interview', 'Assessment', 'Offer', 'Hired'].map(
-                  (stage) => (
+              {/* Template Preview */}
+              <div className="bg-white/[0.03] border border-white/[0.08] rounded-lg p-4 mb-4">
+                <p className="text-sm text-white/60 mb-3">
+                  Fields that will be collected:
+                </p>
+                <div className="space-y-2">
+                  {TEMPLATES[formData.applicationTemplate].map((field, idx) => (
                     <div
-                      key={stage}
-                      className="px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-sm text-white flex items-center gap-2 cursor-move hover:bg-white/[0.08] transition-colors"
+                      key={idx}
+                      className="flex items-center gap-2 text-sm text-white/80"
                     >
-                      <span>≡</span>
-                      {stage}
+                      <Check size={16} className="text-[#FF5A2C]" />
+                      {field}
                     </div>
-                  )
-                )}
+                  ))}
+                </div>
               </div>
-              <p className="text-xs text-white/50 mt-3">
-                Drag and drop to reorder stages
-              </p>
+
+              <button
+                onClick={() => setShowCustomizeModal(true)}
+                className="w-full px-4 py-2 bg-white/[0.08] border border-white/[0.08] rounded-lg text-white/80 hover:bg-white/[0.12] transition-all text-sm font-medium"
+                type="button"
+              >
+                Customize Application Form
+              </button>
             </div>
           </motion.div>
         </div>
 
         {/* Right Sidebar */}
-        <div className="space-y-6">
+        <div className="hidden lg:flex lg:flex-col px-8 py-8 border-l border-white/[0.08] sticky top-24 h-fit gap-6">
           {/* Job Summary Card */}
           <motion.div
-            className="sticky top-8 bg-[#141414] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl"
+            className="bg-[#141414] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.45 }}
+            transition={{ delay: 0.4 }}
           >
             <h3 className="text-sm font-semibold text-white mb-4">
               Job Summary
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-3 text-sm">
               <div>
-                <div className="text-xs text-white/50 mb-1">Title</div>
-                <div className="text-sm font-medium text-white">
-                  {formData.jobTitle || 'Not set'}
-                </div>
+                <p className="text-white/60">Position</p>
+                <p className="text-white font-medium">
+                  {formData.jobTitle || 'Not specified'}
+                </p>
               </div>
               <div>
-                <div className="text-xs text-white/50 mb-1">Department</div>
-                <div className="text-sm font-medium text-white">
-                  {formData.department || 'Not set'}
-                </div>
+                <p className="text-white/60">Employment Type</p>
+                <p className="text-white font-medium">
+                  {EMPLOYMENT_TYPES.find((t) => t.value === formData.employmentType)
+                    ?.label || 'Not selected'}
+                </p>
               </div>
               <div>
-                <div className="text-xs text-white/50 mb-1">Location</div>
-                <div className="text-sm font-medium text-white">
-                  {formData.location || 'Not set'}
-                </div>
+                <p className="text-white/60">Salary Range</p>
+                <p className="text-white font-medium">
+                  {formData.minSalary && formData.maxSalary
+                    ? `₹${parseInt(formData.minSalary).toLocaleString('en-IN')} - ₹${parseInt(formData.maxSalary).toLocaleString('en-IN')}`
+                    : 'Not specified'}
+                </p>
               </div>
-              <div>
-                <div className="text-xs text-white/50 mb-1">Employment Type</div>
-                <div className="text-sm font-medium text-white">
-                  {formData.employmentType
-                    ? formData.employmentType.charAt(0).toUpperCase() +
-                      formData.employmentType.slice(1)
-                    : 'Not set'}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-white/50 mb-1">Required Skills</div>
-                <div className="text-sm font-medium text-white">
-                  {formData.skills.length} skill
-                  {formData.skills.length !== 1 ? 's' : ''}
-                </div>
-              </div>
-              {formData.minSalary && formData.maxSalary && (
-                <div>
-                  <div className="text-xs text-white/50 mb-1">Salary Range</div>
-                  <div className="text-sm font-medium text-white">
-                    {formData.currency} {formData.minSalary} - {formData.maxSalary}
-                  </div>
-                </div>
-              )}
-              {formData.applicationDeadline && (
-                <div>
-                  <div className="text-xs text-white/50 mb-1">Deadline</div>
-                  <div className="text-sm font-medium text-white">
-                    {new Date(
-                      formData.applicationDeadline
-                    ).toLocaleDateString()}
-                  </div>
-                </div>
-              )}
             </div>
           </motion.div>
 
           {/* Publishing Checklist */}
           <motion.div
-            className="sticky top-64 bg-[#141414] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl"
+            className="bg-[#141414] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.45 }}
           >
-            <h3 className="text-sm font-semibold text-white mb-4">
-              Publishing Checklist
-            </h3>
-
-            {/* Completion Ring */}
-            <div className="flex items-center justify-center mb-6">
-              <div className="relative w-24 h-24">
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    className="text-white/[0.08]"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeDasharray={`${2 * Math.PI * 45}`}
-                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - completionPercentage / 100)}`}
-                    className="text-[#FF5A2C] transition-all duration-500"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-white">
-                      {completionPercentage}%
-                    </div>
-                  </div>
-                </div>
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-white">
+                  Publishing Checklist
+                </h3>
+                <span className="text-xs font-medium text-[#FF5A2C]">
+                  {completionPercentage}%
+                </span>
+              </div>
+              <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-[#FF5A2C]"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${completionPercentage}%` }}
+                  transition={{ duration: 0.5 }}
+                />
               </div>
             </div>
 
-            {/* Checklist Items */}
-            <div className="space-y-2">
+            <div className="space-y-2 text-sm">
               {[
-                { done: !!formData.jobTitle, label: 'Title Added' },
-                { done: !!formData.jobDescription, label: 'Description Added' },
-                { done: formData.skills.length > 0, label: 'Skills Added' },
-                { done: !!formData.applicationDeadline, label: 'Deadline Selected' },
+                { label: 'Job Title', done: !!formData.jobTitle },
                 {
-                  done: formData.applicationTemplate !== '',
-                  label: 'Template Selected',
+                  label: 'Job Description',
+                  done: !!formData.jobDescription,
+                },
+                { label: 'Required Skills', done: formData.skills.length > 0 },
+                {
+                  label: 'Application Deadline',
+                  done: !!formData.applicationDeadline,
+                },
+                {
+                  label: 'Compensation',
+                  done: !!formData.minSalary && !!formData.maxSalary,
                 },
               ].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2">
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 text-white/70"
+                >
                   <div
-                    className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                    className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
                       item.done
                         ? 'bg-[#FF5A2C] border-[#FF5A2C]'
                         : 'border-white/[0.2]'
                     }`}
                   >
-                    {item.done && (
-                      <Check className="w-3 h-3 text-white" />
-                    )}
+                    {item.done && <Check size={14} className="text-white" />}
                   </div>
-                  <span
-                    className={`text-sm ${
-                      item.done ? 'text-white' : 'text-white/60'
-                    }`}
-                  >
+                  <span className={item.done ? 'text-white' : ''}>
                     {item.label}
                   </span>
                 </div>
@@ -799,48 +794,48 @@ export default function NewJobPage() {
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
-      <motion.div
-        className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A]/95 border-t border-white/[0.08] backdrop-blur-xl"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.55 }}
-      >
-        <div className="flex items-center justify-between px-8 py-4 max-w-7xl mx-auto w-full">
+      {/* Sticky Bottom Action Bar */}
+      <div className="sticky bottom-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-white/[0.08] px-8 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {lastSaved ? (
-              <div className="text-sm text-[#FF5A2C] flex items-center gap-1">
-                <Check className="w-4 h-4" />
-                Saved
-              </div>
-            ) : (
-              <div className="text-sm text-white/50">Auto-save enabled</div>
+            {lastSaved && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex items-center gap-2 text-xs text-white/60"
+              >
+                <Check size={14} className="text-[#FF5A2C]" />
+                Auto-saved
+              </motion.div>
             )}
           </div>
 
           <div className="flex gap-3">
             <button
-              onClick={handleSaveDraft}
-              className="px-6 py-2 bg-white/[0.05] text-white rounded-lg hover:bg-white/[0.08] transition-colors text-sm font-medium"
+              onClick={handleAutoSave}
+              className="px-6 py-2 bg-white/[0.08] border border-white/[0.08] rounded-lg text-white hover:bg-white/[0.12] transition-all font-medium text-sm"
             >
               Save Draft
             </button>
-            <button className="px-6 py-2 bg-white/[0.05] text-white rounded-lg hover:bg-white/[0.08] transition-colors text-sm font-medium">
-              Preview Job
+            <button
+              className="px-6 py-2 bg-white/[0.08] border border-white/[0.08] rounded-lg text-white hover:bg-white/[0.12] transition-all font-medium text-sm"
+            >
+              Preview
             </button>
             <button
               disabled={completionPercentage < 100}
-              className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
-                completionPercentage < 100
-                  ? 'bg-[#FF5A2C]/50 text-white/50 cursor-not-allowed'
-                  : 'bg-[#FF5A2C] text-white hover:bg-[#FF7A4A]'
+              className={`px-6 py-2 rounded-lg font-medium text-sm transition-all ${
+                completionPercentage === 100
+                  ? 'bg-[#FF5A2C] text-white hover:bg-[#FF7A4A]'
+                  : 'bg-[#FF5A2C]/30 text-white/50 cursor-not-allowed'
               }`}
             >
-              Publish Job
+              Publish
             </button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Customize Modal */}
       <AnimatePresence>
@@ -849,77 +844,54 @@ export default function NewJobPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
             onClick={() => setShowCustomizeModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
+              className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8 max-w-md w-full mx-4"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-lg font-semibold text-white">
                   Customize Application Form
                 </h2>
                 <button
                   onClick={() => setShowCustomizeModal(false)}
-                  className="text-white/60 hover:text-white transition-colors"
+                  className="text-white/50 hover:text-white transition-colors"
+                  type="button"
                 >
-                  <X className="w-5 h-5" />
+                  <X size={20} />
                 </button>
               </div>
 
-              {/* Form Sections */}
-              <div className="space-y-4">
-                {[
-                  'Personal Information',
-                  'Education',
-                  'Experience',
-                  'Documents',
-                  'Links',
-                ].map((section) => (
-                  <div
-                    key={section}
-                    className="flex items-center justify-between p-4 bg-white/[0.05] border border-white/[0.08] rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        defaultChecked
-                        className="w-4 h-4"
-                      />
-                      <div>
-                        <div className="text-sm font-medium text-white">
-                          {section}
-                        </div>
-                        <div className="text-xs text-white/50">
-                          Required field
-                        </div>
-                      </div>
-                    </div>
-                    <button className="text-white/60 hover:text-white transition-colors">
-                      ⋮
-                    </button>
-                  </div>
-                ))}
+              <div className="space-y-3 mb-6">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" defaultChecked className="w-4 h-4" />
+                  <span className="text-white text-sm">Resume Upload</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" defaultChecked className="w-4 h-4" />
+                  <span className="text-white text-sm">Cover Letter</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4" />
+                  <span className="text-white text-sm">Portfolio Link</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4" />
+                  <span className="text-white text-sm">Phone Number</span>
+                </label>
               </div>
 
-              <div className="mt-8 flex gap-3">
-                <button
-                  onClick={() => setShowCustomizeModal(false)}
-                  className="flex-1 px-4 py-2 bg-white/[0.05] text-white rounded-lg hover:bg-white/[0.08] transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowCustomizeModal(false)}
-                  className="flex-1 px-4 py-2 bg-[#FF5A2C] text-white rounded-lg hover:bg-[#FF7A4A] transition-colors font-medium"
-                >
-                  Save Changes
-                </button>
-              </div>
+              <button
+                onClick={() => setShowCustomizeModal(false)}
+                className="w-full px-4 py-2 bg-[#FF5A2C] text-white rounded-lg hover:bg-[#FF7A4A] transition-all font-medium"
+              >
+                Save Changes
+              </button>
             </motion.div>
           </motion.div>
         )}
