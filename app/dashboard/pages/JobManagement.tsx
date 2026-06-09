@@ -1,5 +1,6 @@
 import { Search, Filter, Plus, MoreVertical, MapPin, Users, Clock, Edit, Copy, Eye, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function JobManagement() {
   const [filterDepartment, setFilterDepartment] = useState('all');
@@ -111,10 +112,10 @@ export default function JobManagement() {
           <h1 className="text-3xl font-semibold text-white mb-2">Job Management</h1>
           <p className="text-white/50">Manage Open Positions</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF5A1F] to-[#FF7A4A] text-white rounded-lg font-medium shadow-[0_0_20px_rgba(255,90,31,0.4)] hover:shadow-[0_0_30px_rgba(255,90,31,0.6)] transition-all">
+        <Link href="/dashboard/jobs/new" className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF5A1F] to-[#FF7A4A] text-white rounded-lg font-medium shadow-[0_0_20px_rgba(255,90,31,0.4)] hover:shadow-[0_0_30px_rgba(255,90,31,0.6)] transition-all">
           <Plus className="w-5 h-5" />
           Create New Job
-        </button>
+        </Link>
       </div>
 
       {/* Filters Bar */}

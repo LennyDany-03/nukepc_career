@@ -2,6 +2,7 @@
 
 import { Search, Plus, MapPin, Users, Clock, Briefcase, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function JobManagement() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -80,10 +81,10 @@ export default function JobManagement() {
               </div>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF5A1F] to-[#FF7A4A] text-white rounded-xl font-semibold shadow-[0_0_20px_rgba(255,90,31,0.4)] hover:shadow-[0_0_30px_rgba(255,90,31,0.6)] transition-all duration-300">
+          <Link href="/dashboard/jobs/new" className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF5A1F] to-[#FF7A4A] text-white rounded-xl font-semibold shadow-[0_0_20px_rgba(255,90,31,0.4)] hover:shadow-[0_0_30px_rgba(255,90,31,0.6)] transition-all duration-300">
             <Plus className="w-5 h-5" />
             Create New Job
-          </button>
+          </Link>
         </div>
       </div>
 

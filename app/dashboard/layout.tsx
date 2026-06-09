@@ -1,31 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import TopNav from '@/components/dashboard/TopNav';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    // Check if user is authenticated
-    const authToken = localStorage.getItem('auth_token');
-    if (!authToken) {
-      router.push('/login');
-    } else {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
-  }, [router]);
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0A0A0A]">
         <div className="text-center">
@@ -36,7 +22,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return null;
   }
 

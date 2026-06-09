@@ -57,10 +57,13 @@ export default function Sidebar() {
 
       {/* Post Job Button */}
       <div className="p-4 border-t border-white/[0.08]">
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#FF5A1F] to-[#FF7A4A] text-white rounded-lg font-medium shadow-[0_0_20px_rgba(255,90,31,0.4)] hover:shadow-[0_0_30px_rgba(255,90,31,0.6)] transition-all">
+        <Link
+          href="/dashboard/jobs/new"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#FF5A1F] to-[#FF7A4A] text-white rounded-lg font-medium shadow-[0_0_20px_rgba(255,90,31,0.4)] hover:shadow-[0_0_30px_rgba(255,90,31,0.6)] transition-all"
+        >
           <Plus className="w-5 h-5" />
           Post New Job
-        </button>
+        </Link>
       </div>
     </div>
   );

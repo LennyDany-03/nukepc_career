@@ -6,22 +6,25 @@ import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
-  const { login, googleLogin } = useAuth();
+  const { register, googleLogin } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      if (!email || !password) {
+      if (!name || !email || !password || !confirmPassword) {
         setError('Please fill in all fields');
         return;
       }
@@ -31,11 +34,34 @@ export default function LoginPage() {
         return;
       }
 
-      await login(email, password);
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters long');
+        return;
+      }
+
+      await register(email, name, password);
     } catch (err: any) {
       console.error(err);
-      const detail = err.response?.data?.non_field_errors?.[0] || err.response?.data?.detail || 'Login failed. Please check your credentials and try again.';
-      setError(detail);
+      // Format validation errors nicely
+      const errData = err.response?.data;
+      if (errData) {
+        if (errData.password) {
+          setError(errData.password[0]);
+        } else if (errData.email) {
+          setError(errData.email[0]);
+        } else if (errData.detail) {
+          setError(errData.detail);
+        } else {
+          setError('Registration failed. Please try again.');
+        }
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -74,7 +100,6 @@ export default function LoginPage() {
     }
   };
 
-
   return (
     <div className="min-h-screen flex bg-white">
       {/* Left Side - Hero Section */}
@@ -88,13 +113,13 @@ export default function LoginPage() {
 
         <div className="space-y-6">
           <h1 className="text-5xl font-bold text-white leading-tight">
-            Welcome Back! 👋
+            Join the Community! 🚀
           </h1>
           <p className="text-[#FF5A1F] text-xl font-semibold">
-            Ready to customize your dream PC?
+            Start building your dream setup today
           </p>
           <p className="text-gray-300 text-lg leading-relaxed max-w-md">
-            Log in to access your account and continue building the perfect setup. Our tools make it easy to select components and configure your PC just the way you want it. If you&apos;re new, create an account and start your journey with us today!
+            Create an account to save your builds, track component prices, configure custom PC setups, and join a community of gaming and tech enthusiasts.
           </p>
         </div>
 
@@ -103,23 +128,38 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-12 bg-gradient-to-b from-white via-white to-gray-50">
+      {/* Right Side - Register Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-12 bg-gradient-to-b from-white via-white to-gray-50 py-12">
         <div className="w-full max-w-md mx-auto">
           <div className="mb-8">
-            <h2 className="text-4xl font-bold text-gray-900 mb-2">Sign In</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-2">Create Account</h2>
             <p className="text-gray-600">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-[#FF5A1F] font-medium hover:underline">
-                Sign Up
+              Already have an account?{' '}
+              <Link href="/login" className="text-[#FF5A1F] font-medium hover:underline">
+                Sign In
               </Link>
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleRegister} className="space-y-4">
+            {/* Full Name */}
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-1">
+                Full Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                placeholder="Enter your full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A1F] focus:border-transparent text-gray-900 placeholder:text-gray-400"
+              />
+            </div>
+
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-1">
                 Email
               </label>
               <input
@@ -128,28 +168,23 @@ export default function LoginPage() {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A1F] focus:border-transparent text-gray-900 placeholder:text-gray-400"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A1F] focus:border-transparent text-gray-900 placeholder:text-gray-400"
               />
             </div>
 
             {/* Password Field */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-900">
-                  Password
-                </label>
-                <a href="#" className="text-sm text-[#FF5A1F] hover:underline">
-                  Forgot Password?
-                </a>
-              </div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-900 mb-1">
+                Password
+              </label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Password"
+                  placeholder="At least 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A1F] focus:border-transparent text-gray-900 placeholder:text-gray-400"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A1F] focus:border-transparent text-gray-900 placeholder:text-gray-400"
                 />
                 <button
                   type="button"
@@ -161,6 +196,30 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Confirm Password Field */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-900 mb-1">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Repeat your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A1F] focus:border-transparent text-gray-900 placeholder:text-gray-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
             {/* Error Message */}
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -168,17 +227,17 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Sign In Button */}
+            {/* Sign Up Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-[#FF5A1F] to-[#FF7A4A] text-white font-semibold rounded-full hover:shadow-lg hover:shadow-[#FF5A1F]/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 mt-2 bg-gradient-to-r from-[#FF5A1F] to-[#FF7A4A] text-white font-semibold rounded-full hover:shadow-lg hover:shadow-[#FF5A1F]/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? 'Creating Account...' : 'Sign Up'}
             </button>
 
             {/* Divider */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 py-2">
               <div className="flex-1 h-px bg-gray-300" />
               <span className="text-sm text-gray-500">or</span>
               <div className="flex-1 h-px bg-gray-300" />
@@ -208,13 +267,13 @@ export default function LoginPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Sign in with Google
+              Sign up with Google
             </button>
           </form>
 
           {/* Footer */}
-          <p className="mt-8 text-center text-sm text-gray-500">
-            By signing in, you agree to our{' '}
+          <p className="mt-6 text-center text-sm text-gray-500">
+            By signing up, you agree to our{' '}
             <a href="#" className="text-gray-700 hover:underline">
               Terms of Service
             </a>{' '}

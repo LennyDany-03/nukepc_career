@@ -1,18 +1,29 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { Search, Bell, MessageSquare, HelpCircle, ChevronDown, LogOut } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function TopNav() {
-  const router = useRouter();
+  const { user, logout } = useAuth();
   const [showLogoutMenu, setShowLogoutMenu] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_email');
-    router.push('/login');
+  const handleLogout = async () => {
+    await logout();
   };
+
+  const initials = user
+    ? user.first_name
+      ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase()
+      : user.email[0].toUpperCase()
+    : 'U';
+
+  const displayName = user
+    ? user.first_name
+      ? `${user.first_name} ${user.last_name}`
+      : user.email
+    : 'User';
+
 
   return (
     <div className="h-16 bg-[#0F0F0F] border-b border-white/[0.08] flex items-center justify-between px-6 sticky top-0 z-10">
@@ -54,11 +65,11 @@ export default function TopNav() {
             className="flex items-center gap-3 hover:bg-[#FF5A1F]/10 rounded-xl px-3 py-2 transition-all group"
           >
             <div className="w-8 h-8 bg-gradient-to-br from-[#FF5A1F] to-[#FF8A5B] rounded-full flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(255,90,31,0.3)] group-hover:shadow-[0_0_16px_rgba(255,90,31,0.4)] transition-shadow">
-              <span className="text-white text-sm font-medium">HR</span>
+              <span className="text-white text-sm font-medium">{initials}</span>
             </div>
             <div className="text-left">
-              <p className="text-sm font-medium text-white leading-tight">HR Manager</p>
-              <p className="text-xs text-white/50">Admin</p>
+              <p className="text-sm font-medium text-white leading-tight truncate max-w-[120px]">{displayName}</p>
+              <p className="text-xs text-white/50">{user?.email === 'admin@nukepc.com' ? 'Super Admin' : 'Admin'}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-white/40 group-hover:text-white/60 transition-colors flex-shrink-0" />
           </button>
