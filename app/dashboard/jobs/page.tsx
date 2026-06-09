@@ -1,69 +1,50 @@
 'use client';
 
-import { Search, Plus, MapPin, Users, Clock, Briefcase, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { Search, Plus, MapPin, Users, Clock, Briefcase } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { api } from '@/services/auth';
+
+interface Job {
+  id: number;
+  title: string;
+  department: string;
+  location: string;
+  employment_type: 'internship' | 'fulltime' | null;
+  created_at: string;
+}
 
 export default function JobManagement() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const jobs = [
-    {
-      id: 1,
-      title: 'Senior React Developer',
-      department: 'Engineering',
-      location: 'Remote',
-      type: 'Full-time',
-      applications: 147,
-      status: 'Published',
-      created: '6/1/2024',
-    },
-    {
-      id: 2,
-      title: 'UX Designer',
-      department: 'Design',
-      location: 'New York, NY',
-      type: 'Full-time',
-      applications: 89,
-      status: 'Published',
-      created: '6/3/2024',
-    },
-    {
-      id: 3,
-      title: 'Product Manager',
-      department: 'Product',
-      location: 'San Francisco, CA',
-      type: 'Full-time',
-      applications: 203,
-      status: 'Published',
-      created: '5/28/2024',
-    },
-    {
-      id: 4,
-      title: 'DevOps Engineer',
-      department: 'Engineering',
-      location: 'Remote',
-      type: 'Full-time',
-      applications: 124,
-      status: 'Published',
-      created: '6/5/2024',
-    },
-    {
-      id: 5,
-      title: 'Data Scientist',
-      department: 'Data',
-      location: 'Austin, TX',
-      type: 'Full-time',
-      applications: 95,
-      status: 'Draft',
-      created: '6/7/2024',
-    },
-  ];
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await api.get('/jobs/');
+        setJobs(response.data);
+      } catch (error) {
+        console.error('Failed to fetch jobs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
 
   const filteredJobs = jobs.filter(job =>
     job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     job.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#FF5A1F] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] p-8">
@@ -115,12 +96,8 @@ export default function JobManagement() {
                 <div className="w-12 h-12 bg-white/[0.05] rounded-lg flex items-center justify-center group-hover:bg-[#FF5A1F]/20 transition-colors">
                   <Briefcase className="w-6 h-6 text-[#FF5A1F]" />
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  job.status === 'Published'
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-yellow-500/20 text-yellow-400'
-                }`}>
-                  {job.status}
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400">
+                  Published
                 </span>
               </div>
               <h3 className="text-lg font-bold text-white mb-1">{job.title}</h3>
@@ -139,13 +116,13 @@ export default function JobManagement() {
                 <span className="text-white/60 text-sm">Applications</span>
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-[#FF5A1F]" />
-                  <span className="text-white font-semibold">{job.applications}</span>
+                  <span className="text-white font-semibold">0</span>
                 </div>
               </div>
               <div className="w-full h-2 bg-white/[0.05] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-[#FF5A1F] to-[#FF8A5B]"
-                  style={{ width: `${Math.min((job.applications / 250) * 100, 100)}%` }}
+                  style={{ width: '0%' }}
                 />
               </div>
             </div>
@@ -154,11 +131,11 @@ export default function JobManagement() {
             <div className="flex items-center justify-between pt-5 border-t border-white/[0.08]">
               <div className="flex items-center gap-2 text-white/50 text-xs">
                 <Clock className="w-3.5 h-3.5" />
-                {job.created}
+                {new Date(job.created_at).toLocaleDateString()}
               </div>
-              <button className="px-4 py-2 bg-[#FF5A1F]/20 text-[#FF5A1F] rounded-lg text-sm font-medium hover:bg-[#FF5A1F]/30 transition-colors">
+              <Link href={`/dashboard/jobs/${job.id}`} className="px-4 py-2 bg-[#FF5A1F]/20 text-[#FF5A1F] rounded-lg text-sm font-medium hover:bg-[#FF5A1F]/30 transition-colors">
                 View Details
-              </button>
+              </Link>
             </div>
           </div>
         ))}
@@ -169,9 +146,10 @@ export default function JobManagement() {
         <div className="flex flex-col items-center justify-center py-16">
           <Briefcase className="w-16 h-16 text-white/20 mb-4" />
           <h3 className="text-white/70 text-lg font-medium mb-2">No jobs found</h3>
-          <p className="text-white/50 text-sm">Try adjusting your search criteria</p>
+          <p className="text-white/50 text-sm">Try adjusting your search criteria or create a new job</p>
         </div>
       )}
     </div>
   );
 }
+

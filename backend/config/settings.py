@@ -59,6 +59,8 @@ INSTALLED_APPS = [
 
     # Local Apps
     'accounts',
+    'jobs',
+    'applications',
 ]
 
 MIDDLEWARE = [
@@ -222,4 +224,8 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
+
+# Media files configuration (Uploaded Resumes, etc.)
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
