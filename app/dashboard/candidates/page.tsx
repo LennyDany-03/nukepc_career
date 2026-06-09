@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   Users, Search, Filter, ExternalLink, X, FileText, 
   Mail, Phone, GraduationCap, Briefcase, Calendar, 
-  ChevronDown, Download, Award, Clock, AlertCircle, Sparkles
+  ChevronDown, Download, Award, Clock, AlertCircle, Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '@/services/auth';
@@ -124,6 +125,42 @@ export default function CandidatesPage() {
   const [selectedJobFilter, setSelectedJobFilter] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [screeningResult, setScreeningResult] = useState<any>(null);
+  const [screeningLoading, setScreeningLoading] = useState(false);
+  const [reScreeningLoading, setReScreeningLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedCandidate) {
+      setScreeningResult(null);
+      return;
+    }
+    const fetchScreening = async () => {
+      setScreeningLoading(true);
+      try {
+        const res = await api.get(`/ats/results/${selectedCandidate.id}/`);
+        setScreeningResult(res.data);
+      } catch (err) {
+        console.error('Failed to get candidate screening:', err);
+        setScreeningResult(null);
+      } finally {
+        setScreeningLoading(false);
+      }
+    };
+    fetchScreening();
+  }, [selectedCandidate]);
+
+  const handleRunScreening = async (appId: number) => {
+    setReScreeningLoading(true);
+    try {
+      const res = await api.post(`/ats/screen/${appId}/`);
+      setScreeningResult(res.data);
+    } catch (err) {
+      console.error('Failed to run screening:', err);
+      alert('AI matching failed. Please check backend server log.');
+    } finally {
+      setReScreeningLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -438,6 +475,82 @@ export default function CandidatesPage() {
                           {selectedCandidate.phone}
                         </a>
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* AI ATS Matching Analysis */}
+                <div className="bg-[#141414] border border-white/[0.08] rounded-xl p-6 relative overflow-hidden">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#FF5A1F]" />
+                      AI ATS Suitability Analysis
+                    </h3>
+                    {screeningResult && (
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                        screeningResult.fit_level === 'Strong Fit'
+                          ? 'bg-green-500/15 text-green-400 border border-green-500/20'
+                          : screeningResult.fit_level === 'Moderate Fit'
+                          ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
+                          : 'bg-red-500/15 text-red-400 border border-red-500/20'
+                      }`}>
+                        {screeningResult.fit_level}
+                      </span>
+                    )}
+                  </div>
+
+                  {screeningLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <div className="w-6 h-6 border-2 border-[#FF5A1F] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : screeningResult ? (
+                    <div className="space-y-4">
+                      {/* Score block */}
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl font-extrabold text-white">{screeningResult.score}%</span>
+                        <span className="text-sm text-white/50">ATS Suitability Score</span>
+                      </div>
+
+                      {/* Summary */}
+                      <p className="text-sm text-white/70 leading-relaxed font-sans">
+                        {screeningResult.summary}
+                      </p>
+
+                      {/* Recommendation */}
+                      <div className="bg-white/[0.02] border-l-2 border-[#FF5A1F] p-3 rounded-r-lg italic text-sm text-white/80">
+                        &ldquo;{screeningResult.recommendation}&rdquo;
+                      </div>
+
+                      {/* Re-run button */}
+                      <button
+                        onClick={() => handleRunScreening(selectedCandidate.id)}
+                        disabled={reScreeningLoading}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-white/[0.05] hover:bg-white/[0.08] text-white border border-white/[0.08] rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${reScreeningLoading ? 'animate-spin' : ''}`} />
+                        Re-run AI Matching Evaluation
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 space-y-3">
+                      <p className="text-xs text-white/40">No matching metrics evaluated for this candidate yet.</p>
+                      <button
+                        onClick={() => handleRunScreening(selectedCandidate.id)}
+                        disabled={reScreeningLoading}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FF5A1F]/15 hover:bg-[#FF5A1F]/25 text-[#FF5A1F] border border-[#FF5A1F]/25 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                      >
+                        {reScreeningLoading ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            Analyzing Resume...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Run AI Suitability Match
+                          </>
+                        )}
+                      </button>
                     </div>
                   )}
                 </div>

@@ -23,7 +23,22 @@ class Application(models.Model):
     expected_ctc = models.CharField(max_length=100, null=True, blank=True)
     notice_period = models.IntegerField(null=True, blank=True)
     
+    # Pipeline stage & status fields
+    stage = models.CharField(max_length=100, default='Applied')
+    status = models.CharField(max_length=100, default='Pending Review')
+    recruiter_notes = models.TextField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.full_name} - {self.job.title}"
+
+class Interview(models.Model):
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='interviews')
+    scheduled_at = models.DateTimeField()
+    meeting_link = models.URLField(max_length=500, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Interview: {self.application.full_name} at {self.scheduled_at}"

@@ -6,3 +6,6 @@ django-allauth
 dj-rest-auth
 python-dotenv
 cryptography
+requests
+pypdf
+google-generativeai
