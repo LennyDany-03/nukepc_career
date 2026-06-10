@@ -1,0 +1,30 @@
+# Python ignore files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environment
+venv/
+env/
+.venv/
+ENV/
+
+# Databases
+*.sqlite3
+
+# Uploads and static collections
+media/
+static_collected/
+
+# Environment files
+.env
+.env.local
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
