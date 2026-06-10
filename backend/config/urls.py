@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/jobs/', include('jobs.urls')),
+    path('api/template-config/', include('jobs.template_urls')),
     path('api/applications/', include('applications.urls')),
     path('api/ats/', include('ats.urls')),
     path('accounts/', include('allauth.urls')),

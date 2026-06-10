@@ -76,3 +76,30 @@ class Job(models.Model):
 
     def __str__(self):
         return self.job_title if self.job_title else "Untitled Job"
+
+
+class JobTemplateConfig(models.Model):
+    department = models.CharField(max_length=255)
+    employment_type = models.CharField(max_length=50)  # internship / fresher / experienced
+    roles = models.JSONField(default=list)
+    required_skills = models.JSONField(default=list)
+    good_to_have_skills = models.JSONField(default=list, blank=True)
+    portfolio_label = models.CharField(max_length=255, blank=True, default="")
+    assignment_label = models.CharField(max_length=255, blank=True, default="")
+    screening_question_1 = models.CharField(max_length=255, blank=True, default="")
+    screening_question_2 = models.CharField(max_length=255, blank=True, default="")
+    screening_question_3 = models.CharField(max_length=255, blank=True, default="")
+    extra_questions = models.JSONField(default=list, blank=True)
+    duration_options = models.JSONField(default=list, blank=True)
+    year_of_study_options = models.JSONField(default=list, blank=True)
+    probation_options = models.JSONField(default=list, blank=True)
+    notice_period_options = models.JSONField(default=list, blank=True)
+    shift_timing_options = models.JSONField(default=list, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "job_template_config"
+        unique_together = ("department", "employment_type")
+
+    def __str__(self):
+        return f"{self.department} — {self.employment_type}"

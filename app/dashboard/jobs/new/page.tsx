@@ -18,12 +18,14 @@ import {
   Sparkles,
   Award,
   Check,
+  Pencil,
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import InternshipForm from '@/components/forms/InternshipForm';
 import FresherForm from '@/components/forms/FresherForm';
 import ExperiencedForm from '@/components/forms/ExperiencedForm';
+import EditTemplateModal from '@/components/EditTemplateModal';
 
 // Step Types
 type Step = 1 | 2 | 3 | 4;
@@ -47,6 +49,7 @@ export default function NewJobPage() {
   const [selectedDept, setSelectedDept] = useState<string>('');
   const [employmentType, setEmploymentType] = useState<'internship' | 'fulltime' | null>(null);
   const [candidateLevel, setCandidateLevel] = useState<'fresher' | 'experienced' | null>(null);
+  const [editTemplateDept, setEditTemplateDept] = useState<string | null>(null);
 
   // Wizard state machine navigation
   const handleSelectDept = (dept: string) => {
@@ -194,8 +197,19 @@ export default function NewJobPage() {
                       key={dept.name}
                       onClick={() => handleSelectDept(dept.name)}
                       whileHover={{ y: -4, scale: 1.01 }}
-                      className="group bg-gradient-to-b from-[#141414] to-[#0F0F0F] border border-white/[0.08] hover:border-[#FF5A2C]/30 rounded-2xl p-6 cursor-pointer transition-all duration-300 flex flex-col justify-between hover:shadow-[0_10px_30px_rgba(255,90,44,0.1)] h-full min-h-[160px]"
+                      className="group relative bg-gradient-to-b from-[#141414] to-[#0F0F0F] border border-white/[0.08] hover:border-[#FF5A2C]/30 rounded-2xl p-6 cursor-pointer transition-all duration-300 flex flex-col justify-between hover:shadow-[0_10px_30px_rgba(255,90,44,0.1)] h-full min-h-[160px]"
                     >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditTemplateDept(dept.name);
+                        }}
+                        className="absolute top-3 right-3 p-1.5 rounded-lg text-white/40 hover:text-[#FF5A2C] hover:bg-white/[0.08] opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-10"
+                        title="Edit Template"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
                       <div className="space-y-4">
                         <div className="w-12 h-12 rounded-xl bg-white/[0.04] group-hover:bg-[#FF5A2C]/10 text-white/80 group-hover:text-[#FF5A2C] flex items-center justify-center transition-colors">
                           <IconComp className="w-6 h-6" />
@@ -382,6 +396,14 @@ export default function NewJobPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {editTemplateDept && (
+        <EditTemplateModal
+          department={editTemplateDept}
+          isOpen={!!editTemplateDept}
+          onClose={() => setEditTemplateDept(null)}
+        />
+      )}
     </div>
   );
 }

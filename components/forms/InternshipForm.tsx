@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronDown, Calendar, Plus, X, ArrowLeft, Loader2, Sparkles, Check, AlertCircle } from 'lucide-react';
+import { ChevronDown, Plus, X, ArrowLeft, Loader2, Sparkles, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { departmentConfig } from '@/config/departmentConfig';
 import { api } from '@/services/auth';
+import { useTemplateConfig } from '@/hooks/useTemplateConfig';
 import { useRouter } from 'next/navigation';
+import PostSettings from '@/components/forms/PostSettings';
 
 interface FormProps {
   department: string;
@@ -16,11 +17,11 @@ interface FormProps {
 
 export default function InternshipForm({ department, employmentType, candidateLevel, onBack }: FormProps) {
   const router = useRouter();
-  const config = departmentConfig[department as keyof typeof departmentConfig] || departmentConfig['Custom'];
+  const { config, loading: configLoading } = useTemplateConfig(department, 'internship');
 
   // Form State
   const [jobTitle, setJobTitle] = useState('');
-  const [role, setRole] = useState(config.roles[0] || '');
+  const [role, setRole] = useState('');
   const [customRole, setCustomRole] = useState('');
   const [customDept, setCustomDept] = useState(department === 'Custom' ? '' : department);
   const [openings, setOpenings] = useState<number | ''>('');
@@ -43,8 +44,8 @@ export default function InternshipForm({ department, employmentType, candidateLe
   const [preferredBranch, setPreferredBranch] = useState('');
   const [minCgpa, setMinCgpa] = useState<number | ''>('');
   const [yearOfStudy, setYearOfStudy] = useState('Any');
-  const [requiredSkills, setRequiredSkills] = useState<string[]>(config.requiredSkills || []);
-  const [goodSkills, setGoodSkills] = useState<string[]>(config.goodToHaveSkills || []);
+  const [requiredSkills, setRequiredSkills] = useState<string[]>([]);
+  const [goodSkills, setGoodSkills] = useState<string[]>([]);
   const [portfolioRequired, setPortfolioRequired] = useState(false);
   const [assignmentRound, setAssignmentRound] = useState(false);
   const [assignmentDescription, setAssignmentDescription] = useState('');
@@ -86,6 +87,26 @@ export default function InternshipForm({ department, employmentType, candidateLe
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
+
+  useEffect(() => {
+    if (configLoading) return;
+    setRole(config.roles[0] || '');
+    setRequiredSkills([...config.required_skills]);
+    setGoodSkills([...config.good_to_have_skills]);
+    setScreening1(config.screening_question_1);
+    setScreening2(config.screening_question_2);
+    setScreening3(config.screening_question_3);
+    if (config.duration_options.length > 0) {
+      setDuration(
+        config.duration_options.includes('3 months') ? '3 months' : config.duration_options[0]
+      );
+    }
+    if (config.year_of_study_options.length > 0) {
+      setYearOfStudy(
+        config.year_of_study_options.includes('Any') ? 'Any' : config.year_of_study_options[0]
+      );
+    }
+  }, [config, configLoading]);
 
   // Skill Handlers
   const handleAddReqSkill = () => {
@@ -385,11 +406,12 @@ export default function InternshipForm({ department, employmentType, candidateLe
                           onChange={(e) => setDuration(e.target.value)}
                           className="flex-1 bg-[#1A1A1A] border border-white/[0.08] rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/30 focus:border-[#FF5A2C] transition-all"
                         >
-                          <option value="1 month">1 month</option>
-                          <option value="2 months">2 months</option>
-                          <option value="3 months">3 months</option>
-                          <option value="6 months">6 months</option>
-                          <option value="Custom">Custom</option>
+                          {(config.duration_options.length > 0
+                            ? config.duration_options
+                            : ['1 month', '2 months', '3 months', '6 months', 'Custom']
+                          ).map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
                         </select>
                         {duration === 'Custom' && (
                           <div id="customDuration" className="flex-1">
@@ -654,11 +676,14 @@ export default function InternshipForm({ department, employmentType, candidateLe
                         onChange={(e) => setYearOfStudy(e.target.value)}
                         className="w-full bg-[#1A1A1A] border border-white/[0.08] rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/30 focus:border-[#FF5A2C] transition-all"
                       >
-                        <option value="1st">1st year</option>
-                        <option value="2nd">2nd year</option>
-                        <option value="3rd">3rd year</option>
-                        <option value="Final year">Final year</option>
-                        <option value="Any">Any</option>
+                        {(config.year_of_study_options.length > 0
+                          ? config.year_of_study_options
+                          : ['1st', '2nd', '3rd', 'Final year', 'Any']
+                        ).map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt === '1st' || opt === '2nd' || opt === '3rd' ? `${opt} year` : opt}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -744,7 +769,7 @@ export default function InternshipForm({ department, employmentType, candidateLe
 
                   {/* Portfolio required Toggle */}
                   <div className="flex items-center justify-between bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3">
-                    <span className="text-sm font-medium text-white/80">{config.portfolioLabel || 'Portfolio / Work sample required?'}</span>
+                    <span className="text-sm font-medium text-white/80">{config.portfolio_label || 'Portfolio / Work sample required?'}</span>
                     <button
                       type="button"
                       onClick={() => setPortfolioRequired(!portfolioRequired)}
@@ -758,7 +783,7 @@ export default function InternshipForm({ department, employmentType, candidateLe
 
                   {/* Assignment Round Toggle */}
                   <div className="flex items-center justify-between bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3">
-                    <span className="text-sm font-medium text-white/80">{config.assignmentLabel || 'Assignment round?'}</span>
+                    <span className="text-sm font-medium text-white/80">{config.assignment_label || 'Assignment round?'}</span>
                     <button
                       type="button"
                       onClick={() => setAssignmentRound(!assignmentRound)}
@@ -946,77 +971,15 @@ export default function InternshipForm({ department, employmentType, candidateLe
           </AnimatePresence>
         </div>
 
-        {/* SECTION 6: Post Settings */}
-        <div className="bg-[#141414] border border-white/[0.08] rounded-2xl overflow-hidden shadow-lg transition-all duration-300">
-          <div
-            onClick={() => toggleSection('settings')}
-            className="px-6 py-4 flex items-center justify-between border-b border-white/[0.05] cursor-pointer hover:bg-white/[0.02]"
-          >
-            <div className="flex items-center gap-3">
-              <span className="w-7 h-7 rounded-lg bg-[#FF5A2C]/10 text-[#FF5A2C] flex items-center justify-center text-sm font-bold">6</span>
-              <h3 className="font-bold text-white text-lg">Section 6 — Post Settings</h3>
-            </div>
-            <ChevronDown className={`w-5 h-5 text-white/50 transition-transform duration-300 ${expandedSections.settings ? 'rotate-180' : ''}`} />
-          </div>
-
-          <AnimatePresence initial={false}>
-            {expandedSections.settings && (
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: 'auto' }}
-                exit={{ height: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="p-6 space-y-4">
-                  {/* Status Selection and Schedule Date */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-white/80 mb-2">Post Status *</label>
-                      <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className="w-full bg-[#1A1A1A] border border-white/[0.08] rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF5A2C]/30 focus:border-[#FF5A2C] transition-all"
-                      >
-                        <option value="Draft">Draft</option>
-                        <option value="Publish">Publish</option>
-                        <option value="Schedule">Schedule</option>
-                      </select>
-                    </div>
-
-                    {status === 'Schedule' && (
-                      <div id="scheduleDate">
-                        <label className="block text-sm font-semibold text-white/80 mb-2">Schedule Date & Time *</label>
-                        <input
-                          type="datetime-local"
-                          value={scheduleDate}
-                          onChange={(e) => setScheduleDate(e.target.value)}
-                          className={`w-full bg-[#1A1A1A] border rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 transition-all [color-scheme:dark] ${
-                            errors.scheduleDate ? 'border-red-500 focus:ring-red-500/30' : 'border-white/[0.08] focus:ring-[#FF5A2C]/30 focus:border-[#FF5A2C]'
-                          }`}
-                        />
-                        {errors.scheduleDate && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{errors.scheduleDate}</p>}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Notify team Toggle */}
-                  <div className="flex items-center justify-between bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3">
-                    <span className="text-sm font-medium text-white/80">Notify hiring team on new application?</span>
-                    <button
-                      type="button"
-                      onClick={() => setNotifyTeam(!notifyTeam)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${
-                        notifyTeam ? 'bg-[#FF5A2C]' : 'bg-white/10'
-                      }`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${notifyTeam ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        <PostSettings
+          status={status}
+          scheduleDate={scheduleDate}
+          notifyTeam={notifyTeam}
+          errors={errors}
+          onStatusChange={setStatus}
+          onScheduleDateChange={setScheduleDate}
+          onNotifyTeamChange={setNotifyTeam}
+        />
 
         {/* BOTTOM ACTION BAR */}
         <div className="flex items-center justify-between pt-4 border-t border-white/[0.08]">

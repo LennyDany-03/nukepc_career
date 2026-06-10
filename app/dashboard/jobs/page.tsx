@@ -7,11 +7,26 @@ import { api } from '@/services/auth';
 
 interface Job {
   id: number;
-  title: string;
+  job_title: string;
+  role: string;
   department: string;
-  location: string;
-  employment_type: 'internship' | 'fulltime' | null;
+  employment_type: string;
+  candidate_level: string | null;
+  number_of_openings: number;
+  office_location: string;
+  work_mode: string;
   created_at: string;
+  status: string;
+  roles_responsibilities: string;
+  what_intern_learns: string | null;
+  what_we_offer: string | null;
+  required_skills: string[];
+  stipend_amount: number | null;
+  ctc_min: number | null;
+  ctc_max: number | null;
+  internship_duration: string | null;
+  probation_period: string | null;
+  notice_period: string | null;
 }
 
 export default function JobManagement() {
@@ -34,8 +49,8 @@ export default function JobManagement() {
   }, []);
 
   const filteredJobs = jobs.filter(job =>
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.department.toLowerCase().includes(searchTerm.toLowerCase())
+    (job.job_title ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (job.department ?? '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -96,34 +111,38 @@ export default function JobManagement() {
                 <div className="w-12 h-12 bg-white/[0.05] rounded-lg flex items-center justify-center group-hover:bg-[#FF5A1F]/20 transition-colors">
                   <Briefcase className="w-6 h-6 text-[#FF5A1F]" />
                 </div>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400">
-                  Published
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  job.status === 'Published'
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-yellow-500/20 text-yellow-400'
+                }`}>
+                  {job.status}
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-white mb-1">{job.title}</h3>
-              <p className="text-sm text-white/50">{job.department}</p>
+              <h3 className="text-lg font-bold text-white mb-1">{job.job_title}</h3>
+              <p className="text-sm text-white/50 mb-3">{job.department} {job.role ? `· ${job.role}` : ''}</p>
+              <p className="text-sm text-white/40 line-clamp-2 leading-relaxed">
+                {job.roles_responsibilities || job.what_intern_learns || job.what_we_offer || 'No description provided'}
+              </p>
             </div>
 
-            {/* Location */}
-            <div className="flex items-center gap-2 text-white/60 text-sm mb-5 pb-5 border-b border-white/[0.08]">
-              <MapPin className="w-4 h-4 text-[#FF5A1F]" />
-              {job.location}
-            </div>
-
-            {/* Stats */}
-            <div className="space-y-4 mb-6">
-              <div className="flex items-center justify-between">
-                <span className="text-white/60 text-sm">Applications</span>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-[#FF5A1F]" />
-                  <span className="text-white font-semibold">0</span>
+            {/* Meta Row */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/60 text-sm mb-5 pb-5 border-b border-white/[0.08]">
+              {job.office_location && (
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#FF5A1F]" />
+                  {job.office_location}
                 </div>
-              </div>
-              <div className="w-full h-2 bg-white/[0.05] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#FF5A1F] to-[#FF8A5B]"
-                  style={{ width: '0%' }}
-                />
+              )}
+              {job.work_mode && (
+                <div className="flex items-center gap-1.5">
+                  <Briefcase className="w-3.5 h-3.5 text-[#FF5A1F]" />
+                  {job.work_mode}
+                </div>
+              )}
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#FF5A1F]" />
+                {job.number_of_openings} opening{job.number_of_openings !== 1 ? 's' : ''}
               </div>
             </div>
 
