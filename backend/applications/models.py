@@ -31,7 +31,7 @@ class Application(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.full_name} - {self.job.title}"
+        return f"{self.full_name} - {self.job.job_title}"
 
 class Interview(models.Model):
     application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='interviews')

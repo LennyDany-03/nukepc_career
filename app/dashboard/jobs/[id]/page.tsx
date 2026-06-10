@@ -621,116 +621,224 @@ export default function JobDetailsPage() {
         ) : (
           /* ===================== VIEW MODE ===================== */
           <motion.div key="viewing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="p-8 max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-            {/* Left Column */}
-            <div className="space-y-6">
-              {/* Job Header */}
-              <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8">
-                <span className="text-[#FF5A2C] font-semibold text-sm uppercase tracking-wider block mb-2">{job.department}</span>
-                <h2 className="text-3xl font-bold text-white mb-2">{job.job_title}</h2>
-                {job.role && <p className="text-white/60 text-sm mb-4">{job.role}</p>}
-                <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/60">
-                  <div className="flex items-center gap-1.5"><Briefcase className="w-4 h-4 text-[#FF5A2C]" /> {job.employment_type}</div>
-                  <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-[#FF5A2C]" /> {job.office_location || 'Not specified'}</div>
-                  <div className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-[#FF5A2C]" /> {job.work_mode}</div>
-                  {job.shift_timing && <div className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-[#FF5A2C]" /> {job.shift_timing}</div>}
+            className="p-6 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+            {/* ========== LEFT COLUMN ========== */}
+            <div className="space-y-5">
+              {/* Job Header Card */}
+              <div className="relative bg-gradient-to-b from-[#161616] to-[#121212] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#FF5A2C] via-[#FF8A5B] to-transparent" />
+                <div className="p-6">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className="px-2.5 py-1 bg-[#FF5A2C]/10 border border-[#FF5A2C]/20 rounded-lg text-[#FF5A2C] text-xs font-semibold tracking-wider">{job.department}</span>
+                    <span className="w-1 h-1 rounded-full bg-white/20" />
+                    <span className="flex items-center gap-1 text-xs text-white/50"><Briefcase className="w-3 h-3 text-[#FF5A2C]" /> {job.employment_type}</span>
+                    <span className="w-1 h-1 rounded-full bg-white/20" />
+                    <span className="flex items-center gap-1 text-xs text-white/50"><MapPin className="w-3 h-3 text-[#FF5A2C]" /> {job.office_location || 'Remote'}</span>
+                    <span className="w-1 h-1 rounded-full bg-white/20" />
+                    <span className="flex items-center gap-1 text-xs text-white/50"><Globe className="w-3 h-3 text-[#FF5A2C]" /> {job.work_mode}</span>
+                    {job.shift_timing && <><span className="w-1 h-1 rounded-full bg-white/20" /><span className="flex items-center gap-1 text-xs text-white/50"><Clock className="w-3 h-3 text-[#FF5A2C]" /> {job.shift_timing}</span></>}
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-1">{job.job_title}</h2>
+                  {job.role && <p className="text-white/40 text-sm">{job.role}</p>}
+                  <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-white/[0.06]">
+                    <div className="flex items-center gap-2 text-sm"><span className="text-white/40">Openings</span><span className="text-white font-semibold">{job.number_of_openings}</span></div>
+                    <div className="flex items-center gap-2 text-sm"><span className="text-white/40">Deadline</span><span className="text-white font-semibold">{job.application_deadline ? new Date(job.application_deadline).toLocaleDateString() : 'None'}</span></div>
+                    {job.expected_joining_date && <div className="flex items-center gap-2 text-sm"><span className="text-white/40">Joining</span><span className="text-white font-semibold">{new Date(job.expected_joining_date).toLocaleDateString()}</span></div>}
+                    <div className="flex items-center gap-2 text-sm"><span className="text-white/40">Created</span><span className="text-white font-semibold">{new Date(job.created_at).toLocaleDateString()}</span></div>
+                  </div>
                 </div>
               </div>
 
-              {/* Compensation */}
-              <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><DollarSign className="w-5 h-5 text-[#FF5A2C]" /> Compensation</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {isInternship ? (
-                    <>
-                      <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
-                        <p className="text-xs text-white/50 mb-1">Stipend</p>
-                        <p className="text-lg font-bold text-white">{job.stipend_amount ? `₹${job.stipend_amount.toLocaleString('en-IN')}` : 'Not specified'}</p>
-                        {job.stipend_visible && <p className="text-xs text-white/40 mt-1">Visible to applicants</p>}
+              {/* Details Grid Card */}
+              <div className="relative bg-gradient-to-b from-[#161616] to-[#121212] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#FF5A2C]/60 via-[#FF8A5B]/30 to-transparent" />
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* Compensation */}
+                    <div>
+                      <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-md bg-gradient-to-br from-[#FF5A2C] to-[#FF8A5B] flex items-center justify-center"><DollarSign className="w-3 h-3 text-white" /></span>
+                        Compensation
+                      </h3>
+                      {isInternship ? (
+                        <div className="bg-white/[0.03] rounded-xl p-4 space-y-3 border border-white/[0.06]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-white/40">Stipend</span>
+                            <span className="text-base font-bold text-white">{job.stipend_amount ? `₹${job.stipend_amount.toLocaleString('en-IN')}` : 'Not specified'}</span>
+                          </div>
+                          {job.stipend_visible && <div className="text-[11px] text-white/30 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400/60" /> Visible to applicants</div>}
+                          {job.internship_duration && <div className="flex items-center justify-between pt-2 border-t border-white/[0.05]"><span className="text-xs text-white/40">Duration</span><span className="text-sm font-semibold text-white">{job.internship_duration}</span></div>}
+                        </div>
+                      ) : (
+                        <div className="bg-white/[0.03] rounded-xl p-4 space-y-3 border border-white/[0.06]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-white/40">Salary Range</span>
+                            <span className="text-base font-bold text-white">{job.ctc_min != null ? `${job.ctc_min} LPA` : '—'} - {job.ctc_max != null ? `${job.ctc_max} LPA` : '—'}</span>
+                          </div>
+                          {job.salary_visible && <div className="text-[11px] text-white/30 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400/60" /> Visible to applicants</div>}
+                          {job.notice_period && <div className="flex items-center justify-between pt-2 border-t border-white/[0.05]"><span className="text-xs text-white/40">Notice Period</span><span className="text-sm font-semibold text-white">{job.notice_period}</span></div>}
+                          {job.probation_period && <div className="flex items-center justify-between pt-2 border-t border-white/[0.05]"><span className="text-xs text-white/40">Probation</span><span className="text-sm font-semibold text-white">{job.probation_period}</span></div>}
+                        </div>
+                      )}
+                      {(job.performance_bonus || job.other_compensation) && (
+                        <div className="mt-3 space-y-1.5">
+                          {job.performance_bonus && <div className="text-xs text-white/50 flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#FF5A2C]" /> Bonus: {job.performance_bonus_description || 'Yes'}</div>}
+                          {job.other_compensation && <div className="text-xs text-white/50 flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#FF5A2C]" /> Other: {job.other_compensation}</div>}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Requirements */}
+                    <div>
+                      <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-md bg-gradient-to-br from-[#FF5A2C] to-[#FF8A5B] flex items-center justify-center"><GraduationCap className="w-3 h-3 text-white" /></span>
+                        Requirements
+                      </h3>
+                      <div className="bg-white/[0.03] rounded-xl p-4 space-y-2.5 border border-white/[0.06]">
+                        {job.min_education && <FieldRow label="Education" value={job.min_education} />}
+                        {job.preferred_branch && <FieldRow label="Branch" value={job.preferred_branch} />}
+                        {job.min_cgpa != null && <FieldRow label="Min CGPA" value={String(job.min_cgpa)} />}
+                        {job.year_of_study && <FieldRow label="Year of Study" value={job.year_of_study} />}
+                        {job.graduation_year && <FieldRow label="Grad Year" value={String(job.graduation_year)} />}
+                        {job.min_experience != null && <FieldRow label="Experience" value={`${job.min_experience} - ${job.max_experience ?? '∞'} yrs`} />}
+                        {!job.min_education && !job.preferred_branch && job.min_cgpa == null && !job.year_of_study && !job.graduation_year && job.min_experience == null && <span className="text-xs text-white/30">Not specified</span>}
                       </div>
-                      {job.internship_duration && <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4"><p className="text-xs text-white/50 mb-1">Duration</p><p className="text-lg font-bold text-white">{job.internship_duration}</p></div>}
-                    </>
-                  ) : (
-                    <>
-                      <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
-                        <p className="text-xs text-white/50 mb-1">Salary Range</p>
-                        <p className="text-lg font-bold text-white">{job.ctc_min ? `₹${job.ctc_min.toLocaleString('en-IN')}` : '—'} - {job.ctc_max ? `₹${job.ctc_max.toLocaleString('en-IN')}` : '—'}</p>
-                        {job.salary_visible && <p className="text-xs text-white/40 mt-1">Visible to applicants</p>}
+                      <div className="mt-3 space-y-1.5">
+                        {job.certifications && <div className="text-xs text-white/50 flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#FF5A2C]" /> Certifications: {job.certifications}</div>}
+                        {job.portfolio_required && <div className="text-xs text-green-400/80 flex items-center gap-1.5"><Check className="w-3 h-3" /> Portfolio required</div>}
+                        {job.assignment_round && <div className="text-xs text-white/50 flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#FF5A2C]" /> Assignment: {job.assignment_description || 'Yes'}</div>}
+                        {job.led_team != null && <div className="text-xs text-white/50 flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#FF5A2C]" /> {job.led_team ? 'Team leadership required' : 'No team leadership'}</div>}
                       </div>
-                      {job.notice_period && <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4"><p className="text-xs text-white/50 mb-1">Notice Period</p><p className="text-lg font-bold text-white">{job.notice_period}</p></div>}
-                      {job.probation_period && <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4"><p className="text-xs text-white/50 mb-1">Probation</p><p className="text-lg font-bold text-white">{job.probation_period}</p></div>}
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </div>
-                {job.performance_bonus && <div className="mt-3 text-sm text-white/70"><span className="font-semibold">Performance Bonus:</span> {job.performance_bonus_description || 'Yes'}</div>}
-                {job.other_compensation && <div className="mt-2 text-sm text-white/70"><span className="font-semibold">Other:</span> {job.other_compensation}</div>}
               </div>
 
-              {/* Description */}
-              <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><FileText className="w-5 h-5 text-[#FF5A2C]" /> {isInternship ? 'Learning & Responsibilities' : 'Job Description'}</h3>
-                {job.roles_responsibilities && <div className="mb-4"><h4 className="text-sm font-semibold text-white/70 mb-2">Roles & Responsibilities</h4><p className="text-white/80 leading-relaxed text-sm whitespace-pre-wrap">{job.roles_responsibilities}</p></div>}
-                {isInternship && job.what_intern_learns && <div><h4 className="text-sm font-semibold text-white/70 mb-2">What You'll Learn</h4><p className="text-white/80 leading-relaxed text-sm whitespace-pre-wrap">{job.what_intern_learns}</p></div>}
-                {!isInternship && job.what_we_offer && <div><h4 className="text-sm font-semibold text-white/70 mb-2">What We Offer</h4><p className="text-white/80 leading-relaxed text-sm whitespace-pre-wrap">{job.what_we_offer}</p></div>}
-                {job.growth_path && <div className="mt-4"><h4 className="text-sm font-semibold text-white/70 mb-2">Growth Path</h4><p className="text-white/80 leading-relaxed text-sm whitespace-pre-wrap">{job.growth_path}</p></div>}
-                {job.perks_benefits && <div className="mt-4"><h4 className="text-sm font-semibold text-white/70 mb-2">Perks & Benefits</h4><p className="text-white/80 leading-relaxed text-sm whitespace-pre-wrap">{job.perks_benefits}</p></div>}
-                {job.additional_info && <div className="mt-4"><h4 className="text-sm font-semibold text-white/70 mb-2">Additional Info</h4><p className="text-white/80 leading-relaxed text-sm whitespace-pre-wrap">{job.additional_info}</p></div>}
-              </div>
-
-              {/* Skills */}
-              <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Award className="w-5 h-5 text-[#FF5A2C]" /> Skills</h3>
-                {job.required_skills.length > 0 && <div className="mb-4"><h4 className="text-sm font-semibold text-white/70 mb-2">Required</h4><div className="flex flex-wrap gap-2">{job.required_skills.map((s) => <span key={s} className="bg-[#FF5A2C]/10 border border-[#FF5A2C]/20 text-[#FF5A2C] px-3 py-1.5 rounded-lg text-xs font-medium">{s}</span>)}</div></div>}
-                {job.good_to_have_skills.length > 0 && <div><h4 className="text-sm font-semibold text-white/70 mb-2">Good to Have</h4><div className="flex flex-wrap gap-2">{job.good_to_have_skills.map((s) => <span key={s} className="bg-white/[0.05] border border-white/[0.08] text-white/70 px-3 py-1.5 rounded-lg text-xs font-medium">{s}</span>)}</div></div>}
-              </div>
-
-              {/* Requirements */}
-              <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><GraduationCap className="w-5 h-5 text-[#FF5A2C]" /> Requirements</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {job.min_education && <InfoCard label="Education" value={job.min_education} />}
-                  {job.preferred_branch && <InfoCard label="Branch" value={job.preferred_branch} />}
-                  {job.min_cgpa != null && <InfoCard label="Min CGPA" value={String(job.min_cgpa)} />}
-                  {job.year_of_study && <InfoCard label="Year of Study" value={job.year_of_study} />}
-                  {job.graduation_year && <InfoCard label="Graduation Year" value={String(job.graduation_year)} />}
-                  {job.min_experience != null && <InfoCard label="Experience" value={`${job.min_experience} - ${job.max_experience ?? '∞'} yrs`} />}
-                  {job.probation_period && <InfoCard label="Probation" value={job.probation_period} />}
-                  {job.certifications && <InfoCard label="Certifications" value={job.certifications} />}
+              {/* Skills Card */}
+              {job.required_skills.length > 0 || job.good_to_have_skills.length > 0 ? (
+                <div className="relative bg-gradient-to-b from-[#161616] to-[#121212] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#FF5A2C]/60 via-[#FF8A5B]/30 to-transparent" />
+                  <div className="p-6">
+                    <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-md bg-gradient-to-br from-[#FF5A2C] to-[#FF8A5B] flex items-center justify-center"><Award className="w-3 h-3 text-white" /></span>
+                      Skills
+                    </h3>
+                    {job.required_skills.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-[11px] text-white/30 mb-2 font-medium">REQUIRED</p>
+                        <div className="flex flex-wrap gap-2">
+                          {job.required_skills.map((s) => (
+                            <span key={s} className="px-3 py-1.5 bg-gradient-to-r from-[#FF5A2C]/15 to-[#FF8A5B]/5 border border-[#FF5A2C]/25 text-[#FF5A2C] rounded-lg text-xs font-semibold shadow-[0_2px_8px_rgba(255,90,44,0.08)]">{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {job.good_to_have_skills.length > 0 && (
+                      <div>
+                        <p className="text-[11px] text-white/30 mb-2 font-medium">GOOD TO HAVE</p>
+                        <div className="flex flex-wrap gap-2">
+                          {job.good_to_have_skills.map((s) => (
+                            <span key={s} className="px-3 py-1.5 bg-white/[0.04] border border-white/[0.08] text-white/50 rounded-lg text-xs font-medium">{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {job.portfolio_required && <div className="mt-3 flex items-center gap-2 text-sm text-white/70"><Check className="w-4 h-4 text-[#FF5A2C]" /> Portfolio required</div>}
-                {job.assignment_round && <div className="mt-2 text-sm text-white/70"><span className="font-semibold">Assignment:</span> {job.assignment_description || 'Yes'}</div>}
-                {job.led_team != null && <div className="mt-2 text-sm text-white/70">{job.led_team ? 'Team leadership required' : 'No team leadership'}</div>}
-              </div>
+              ) : null}
 
-              {/* Screening Questions */}
+              {/* Description Card */}
+              {(job.roles_responsibilities || (isInternship ? job.what_intern_learns : job.what_we_offer) || job.growth_path || job.perks_benefits || job.additional_info) ? (
+                <div className="relative bg-gradient-to-b from-[#161616] to-[#121212] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#FF5A2C]/60 via-[#FF8A5B]/30 to-transparent" />
+                  <div className="p-6">
+                    <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-md bg-gradient-to-br from-[#FF5A2C] to-[#FF8A5B] flex items-center justify-center"><FileText className="w-3 h-3 text-white" /></span>
+                      {isInternship ? 'Learning & Responsibilities' : 'Job Description'}
+                    </h3>
+                    <div className="space-y-4">
+                      {job.roles_responsibilities && <DescBlock title="Roles &amp; Responsibilities" content={job.roles_responsibilities} />}
+                      {isInternship && job.what_intern_learns && <DescBlock title="What You'll Learn" content={job.what_intern_learns} />}
+                      {!isInternship && job.what_we_offer && <DescBlock title="What We Offer" content={job.what_we_offer} />}
+                      {job.growth_path && <DescBlock title="Growth Path" content={job.growth_path} />}
+                      {job.perks_benefits && <DescBlock title="Perks &amp; Benefits" content={job.perks_benefits} />}
+                      {job.additional_info && <DescBlock title="Additional Info" content={job.additional_info} />}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Screening Questions Card */}
               {(job.screening_question_1 || job.screening_question_2 || job.screening_question_3) && (
-                <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-8">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><BookOpen className="w-5 h-5 text-[#FF5A2C]" /> Screening Questions</h3>
-                  <ul className="space-y-3">{[job.screening_question_1, job.screening_question_2, job.screening_question_3].filter(Boolean).map((q, i) => <li key={i} className="flex items-start gap-2 text-sm text-white/80"><span className="text-[#FF5A2C] font-bold mt-0.5">{i + 1}.</span> {q}</li>)}</ul>
+                <div className="relative bg-gradient-to-b from-[#161616] to-[#121212] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#FF5A2C]/60 via-[#FF8A5B]/30 to-transparent" />
+                  <div className="p-6">
+                    <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-md bg-gradient-to-br from-[#FF5A2C] to-[#FF8A5B] flex items-center justify-center"><BookOpen className="w-3 h-3 text-white" /></span>
+                      Screening Questions
+                    </h3>
+                    <ol className="space-y-3">
+                      {[job.screening_question_1, job.screening_question_2, job.screening_question_3].filter(Boolean).map((q, i) => (
+                        <li key={i} className="flex items-start gap-3 bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
+                          <span className="w-6 h-6 rounded-lg bg-[#FF5A2C]/10 text-[#FF5A2C] flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+                          <span className="text-sm text-white/70 leading-relaxed">{q}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Right Column */}
-            <div className="space-y-6">
-              <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-6 space-y-4">
-                <h3 className="text-sm font-semibold text-white">Posting Status</h3>
-                <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${job.status === 'Publish' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]'}`} />
-                    <span className="text-sm font-medium capitalize text-white/90">{job.status === 'Publish' ? 'Published' : 'Draft'}</span>
+            {/* ========== RIGHT COLUMN ========== */}
+            <div className="space-y-5">
+              {/* Status Card */}
+              <div className="relative bg-gradient-to-b from-[#161616] to-[#121212] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#FF5A2C] via-[#FF8A5B] to-transparent" />
+                <div className="p-5 space-y-4">
+                  <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider">Status</h3>
+                  <div className={`p-4 rounded-xl border ${job.status === 'Publish' ? 'bg-green-500/5 border-green-500/15' : 'bg-yellow-500/5 border-yellow-500/15'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-3 h-3 rounded-full ${job.status === 'Publish' ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' : 'bg-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.6)]'}`} />
+                        <span className="text-sm font-semibold text-white">{job.status === 'Publish' ? 'Published' : 'Draft'}</span>
+                      </div>
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${job.status === 'Publish' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                        {job.status === 'Publish' ? 'LIVE' : 'HIDDEN'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTogglePublish}
+                      disabled={submitting}
+                      className={`w-full py-2 rounded-lg text-xs font-semibold transition-all ${job.status === 'Publish' ? 'bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20'}`}
+                    >
+                      {submitting ? 'Updating...' : job.status === 'Publish' ? 'Move to Draft' : 'Publish Now'}
+                    </button>
                   </div>
-                  <button type="button" onClick={handleTogglePublish} disabled={submitting} className="text-xs text-[#FF5A2C] hover:underline">{job.status === 'Publish' ? 'Set Draft' : 'Publish'}</button>
                 </div>
               </div>
-              <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-6 space-y-3">
-                <h3 className="text-sm font-semibold text-white">Quick Info</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center justify-between"><span className="text-white/50">Openings</span><span className="text-white font-semibold flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-[#FF5A2C]" /> {job.number_of_openings}</span></div>
-                  <div className="flex items-center justify-between"><span className="text-white/50">Deadline</span><span className="text-white font-semibold">{job.application_deadline ? new Date(job.application_deadline).toLocaleDateString() : 'None'}</span></div>
-                  {job.expected_joining_date && <div className="flex items-center justify-between"><span className="text-white/50">Joining</span><span className="text-white font-semibold">{new Date(job.expected_joining_date).toLocaleDateString()}</span></div>}
-                  <div className="flex items-center justify-between"><span className="text-white/50">Created</span><span className="text-white font-semibold">{new Date(job.created_at).toLocaleDateString()}</span></div>
-                  <div className="flex items-center justify-between"><span className="text-white/50">Posted by</span><span className="text-white font-semibold text-xs truncate max-w-[160px]">{job.created_by_email}</span></div>
+
+              {/* Quick Info Card */}
+              <div className="relative bg-gradient-to-b from-[#161616] to-[#121212] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#FF5A2C]/40 via-[#FF8A5B]/20 to-transparent" />
+                <div className="p-5 space-y-3">
+                  <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider">Quick Info</h3>
+                  <div className="space-y-2.5">
+                    <QuickInfoRow icon={Users} label="Openings" value={String(job.number_of_openings)} />
+                    <QuickInfoRow icon={Calendar} label="Deadline" value={job.application_deadline ? new Date(job.application_deadline).toLocaleDateString() : 'None'} />
+                    {job.expected_joining_date && <QuickInfoRow icon={Clock} label="Joining" value={new Date(job.expected_joining_date).toLocaleDateString()} />}
+                    <QuickInfoRow icon={Calendar} label="Created" value={new Date(job.created_at).toLocaleDateString()} />
+                    <div className="pt-2.5 mt-2.5 border-t border-white/[0.06]">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#FF5A2C] to-[#FF8A5B] flex items-center justify-center text-white text-[10px] font-bold">{job.created_by_email?.[0]?.toUpperCase() || '?'}</div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] text-white/30">Posted by</p>
+                          <p className="text-xs text-white/70 truncate">{job.created_by_email}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -741,11 +849,29 @@ export default function JobDetailsPage() {
   );
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function FieldRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
-      <p className="text-xs text-white/50 mb-1">{label}</p>
-      <p className="text-sm font-semibold text-white">{value}</p>
+    <div className="flex items-center justify-between">
+      <span className="text-xs text-white/40">{label}</span>
+      <span className="text-sm font-semibold text-white">{value}</span>
+    </div>
+  );
+}
+
+function DescBlock({ title, content }: { title: string; content: string }) {
+  return (
+    <div>
+      <h4 className="text-[11px] font-semibold text-white/40 mb-2 uppercase tracking-wider">{title}</h4>
+      <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">{content}</p>
+    </div>
+  );
+}
+
+function QuickInfoRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="flex items-center gap-2 text-xs text-white/40"><Icon className="w-3.5 h-3.5 text-[#FF5A2C]/60" /> {label}</span>
+      <span className="text-xs text-white/80 font-medium">{value}</span>
     </div>
   );
 }

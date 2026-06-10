@@ -28,8 +28,7 @@ def extract_text_from_pdf(pdf_path):
 
 def run_fallback_screening(job, app, resume_text):
     # Match skills
-    # job.skills is a list of strings in our backend
-    job_skills = [s.lower().strip() for s in job.skills] if job.skills else []
+    job_skills = [s.lower().strip() for s in job.required_skills] if job.required_skills else []
     resume_lower = resume_text.lower() if resume_text else ""
     cover_lower = app.cover_letter.lower() if app.cover_letter else ""
     
@@ -141,15 +140,18 @@ def screen_application(application):
     engine = 'fallback'
     
     if api_key and HAS_GENAI:
-        prompt = f"""
+        try:
+            skills_str = ', '.join(job.required_skills) if job.required_skills else 'None specified'
+            desc_str = job.roles_responsibilities or 'Not provided'
+            prompt = f"""
         You are an expert ATS (Applicant Tracking System) AI evaluator.
         Evaluate the candidate's application and resume against the job description and required skills.
 
         JOB PROFILE:
-        Title: {job.title}
+        Title: {job.job_title}
         Department: {job.department}
-        Required Skills: {', '.join(job.skills) if job.skills else 'None specified'}
-        Description: {job.description}
+        Required Skills: {skills_str}
+        Description: {desc_str}
 
         CANDIDATE DETAILS:
         Name: {app.full_name}
@@ -164,17 +166,8 @@ def screen_application(application):
 
         Provide your evaluation in strict JSON format. DO NOT return any markdown wrapping, code blocks, or explanations outside the JSON object.
         Return exactly this JSON schema:
-        {{
-          "score": <integer from 0 to 100 representing match percentage>,
-          "fit_level": "<'Strong Fit' | 'Moderate Fit' | 'Low Fit'>",
-          "matching_skills": [<list of candidate skills that match job required skills>],
-          "missing_skills": [<list of job required skills that candidate is missing>],
-          "experience_analysis": "<1-2 sentence analysis of how candidate's experience or academic background matches the job level>",
-          "summary": "<2-3 sentence summary evaluating candidate's overall fit and strengths/weaknesses>",
-          "recommendation": "<1 sentence recommendation on next steps (e.g. schedule coding round, schedule HR screen, reject)>"
-        }}
+        {{"score": <integer from 0 to 100 representing match percentage>,"fit_level": "<'Strong Fit' | 'Moderate Fit' | 'Low Fit'>","matching_skills": [<list of candidate skills that match job required skills>],"missing_skills": [<list of job required skills that candidate is missing>],"experience_analysis": "<1-2 sentence analysis of how candidate's experience or academic background matches the job level>","summary": "<2-3 sentence summary evaluating candidate's overall fit and strengths/weaknesses>","recommendation": "<1 sentence recommendation on next steps (e.g. schedule coding round, schedule HR screen, reject)>"}}
         """
-        try:
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-1.5-flash')
             response = model.generate_content(prompt)
