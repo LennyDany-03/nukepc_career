@@ -6,5 +6,6 @@ router = DefaultRouter()
 router.register(r'', JobViewSet, basename='job')
 
 urlpatterns = [
+    path('create/', JobViewSet.as_view({'post': 'create'}), name='job-create'),
     path('', include(router.urls)),
 ]
